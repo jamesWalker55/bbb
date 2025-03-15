@@ -1,6 +1,6 @@
 // Have a nice day. - A Pseudonymous Coder
 
-function bbbScript() {
+function main() {
   // Wrapper for injecting the script into the document.
   /*
    * NOTE: You no longer need to edit this script to change settings!
@@ -12517,9 +12517,7 @@ function bbbScript() {
 
     var introText = document.createElement("div");
     introText.innerHTML =
-      "While trying to save some settings, BBB has detected that your browser's local storage is full for the donmai.us domain and was unable to automatically fix the problem. In order for BBB to function properly, the storage needs to be cleaned out.<br><br> BBB can cycle through the various donmai locations and clear out Danbooru's autocomplete cache for each. Please select the domains/subdomains you'd like to clean from below and click OK to continue. If you click cancel, BBB will ignore the storage problems for the rest of this browsing session, but features may not work as expected.<br><br> <b>Notes:</b><ul><li>Three options in the domain list are not selected by default (marked as untrusted) since they require special permission from the user to accept invalid security certificates. However, if BBB detects you're already on one of these untrusted domains, then it will be automatically selected.</li><li>If you encounter this warning again right after storage has been cleaned, you may have to check domains you didn't check before or use the \"delete everything\" option to clear items in local storage besides autocomplete " +
-      (window.bbbGMFunc ? "" : "and thumbnail ") +
-      "info.</li></ul><br> <b>Donmai.us domains/subdomains:</b><br>";
+      "While trying to save some settings, BBB has detected that your browser's local storage is full for the donmai.us domain and was unable to automatically fix the problem. In order for BBB to function properly, the storage needs to be cleaned out.<br><br> BBB can cycle through the various donmai locations and clear out Danbooru's autocomplete cache for each. Please select the domains/subdomains you'd like to clean from below and click OK to continue. If you click cancel, BBB will ignore the storage problems for the rest of this browsing session, but features may not work as expected.<br><br> <b>Notes:</b><ul><li>Three options in the domain list are not selected by default (marked as untrusted) since they require special permission from the user to accept invalid security certificates. However, if BBB detects you're already on one of these untrusted domains, then it will be automatically selected.</li><li>If you encounter this warning again right after storage has been cleaned, you may have to check domains you didn't check before or use the \"delete everything\" option to clear items in local storage besides autocomplete and thumbnail info.</li></ul><br> <b>Donmai.us domains/subdomains:</b><br>";
     content.appendChild(introText);
 
     var domainDiv = document.createElement("div");
@@ -12747,63 +12745,20 @@ function bbbScript() {
     }
   }
 
-  function loadData(key) {
-    // Request info from GM_getValue and return it.
-    var settings;
-
-    try {
-      // If GM functions aren't available, throw an error.
-      if (window.bbbGMFunc === false) throw false;
-
-      sendCustomEvent("bbbRequestLoad", { key: key, bbb: bbb });
-      settings = bbb.gm_data;
-      bbb.gm_data = undefined;
-    } catch (error) {
-      settings = localStorage.getItem(key);
-    }
-
-    return settings || null;
+  function loadData(key: string) {
+    return GM_getValue(key, null);
   }
 
-  function saveData(key, value) {
-    // Request saving info with GM_setValue.
-    try {
-      // If GM functions aren't available, throw an error.
-      if (window.bbbGMFunc === false) throw false;
-
-      sendCustomEvent("bbbRequestSave", { key: key, value: value });
-    } catch (error) {
-      localStorage.bbbSetItem(key, value);
-    }
+  function saveData(key: string, value: any) {
+    return GM_setValue(key, value);
   }
 
-  function deleteData(key) {
-    // Request deleting info with GM_deleteValue.
-    try {
-      // If GM functions aren't available, throw an error.
-      if (window.bbbGMFunc === false) throw false;
-
-      sendCustomEvent("bbbRequestDelete", { key: key });
-    } catch (error) {
-      localStorage.removeItem(key);
-    }
+  function deleteData(key: string) {
+    GM_deleteValue(key);
   }
 
   function listData() {
-    // Request an info list array with GM_listValues.
-    try {
-      // If GM functions aren't available, throw an error.
-      if (window.bbbGMFunc === false) throw false;
-
-      sendCustomEvent("bbbRequestList", { bbb: bbb });
-
-      var list = bbb.gm_data.split(",");
-      bbb.gm_data = undefined;
-
-      return list;
-    } catch (error) {
-      return [];
-    }
+    return GM_listValues();
   }
 
   function sendCustomEvent(type, detail) {
@@ -13389,100 +13344,17 @@ function bbbScript() {
 
     if (allowAutocomplete) bbbAutocomplete(searchInputs);
   }
-} // End of bbbScript.
+}
 
-function bbbInit() {
-  var bbbGMFunc; // If/else variable;
-
-  // Set up the data storage.
-  if (
-    typeof GM_getValue === "undefined" ||
-    typeof GM_getValue("bbbdoesntexist", "default") === "undefined"
-  )
-    bbbGMFunc = false;
-  else {
-    bbbGMFunc = true;
-
-    if (typeof GM_deleteValue === "undefined") {
-      GM_deleteValue = function (key) {
-        GM_setValue(key, "");
-      };
-    }
-
-    if (typeof GM_listValues === "undefined") {
-      GM_listValues = function () {
-        return ["bbb_settings"];
-      };
-    }
-
-    window.addEventListener(
-      "bbbRequestLoad",
-      function (event) {
-        var key = event.detail.key;
-        var bbbObj = event.detail.bbb;
-
-        if (
-          typeof key === "string" &&
-          key === "bbb_settings" &&
-          typeof bbbObj === "object"
-        ) {
-          var value = GM_getValue(key);
-
-          if (typeof value === "string") bbbObj.gm_data = value;
-        }
-      },
-      false,
-    );
-
-    window.addEventListener(
-      "bbbRequestSave",
-      function (event) {
-        var key = event.detail.key;
-        var value = event.detail.value;
-
-        if (
-          typeof key === "string" &&
-          key === "bbb_settings" &&
-          typeof value === "string" &&
-          value.length <= 2500000
-        )
-          GM_setValue(key, value);
-      },
-      false,
-    );
-
-    window.addEventListener(
-      "bbbRequestDelete",
-      function (event) {
-        var key = event.detail.key;
-
-        if (typeof key === "string") GM_deleteValue(key);
-      },
-      false,
-    );
-
-    window.addEventListener(
-      "bbbRequestList",
-      function (event) {
-        var bbbObj = event.detail.bbb;
-
-        if (typeof bbbObj === "object")
-          bbbObj.gm_data = GM_listValues().join(","); // Can't pass an array/object back to the page scope, so change it into a string for now.
-      },
-      false,
-    );
-  }
-
+(() => {
   // Run the script
   if (typeof Danbooru !== "undefined") {
-    bbbScript();
+    main();
   } else {
     // Danbooru script isn't loaded yet, wait for script to load first
     const script = document.querySelector(`script[src*="/application-"]`);
     if (script) {
-      script.addEventListener("load", bbbScript, true);
+      script.addEventListener("load", main, true);
     }
   }
-}
-
-bbbInit();
+})();
