@@ -13391,20 +13391,6 @@ function bbbScript() {
   }
 } // End of bbbScript.
 
-function runBBBScript() {
-  // Run the script or prep it to run when Danbooru's JS is ready.
-  if (
-    document.readyState === "interactive" &&
-    typeof Danbooru === "undefined"
-  ) {
-    var danbScript = document.querySelector(
-      "script[src^='/assets/application-']",
-    );
-
-    if (danbScript) danbScript.addEventListener("load", bbbScript, true);
-  } else bbbScript();
-}
-
 function bbbInit() {
   var bbbGMFunc; // If/else variable;
 
@@ -13487,24 +13473,16 @@ function bbbInit() {
     );
   }
 
-  // Inject the script.
-  var script = document.createElement("script");
-  script.type = "text/javascript";
-  script.appendChild(
-    document.createTextNode(
-      "window.bbbGMFunc = " +
-        bbbGMFunc +
-        "; " +
-        bbbScript +
-        "(" +
-        runBBBScript +
-        ")();",
-    ),
-  );
-  document.body.appendChild(script);
-  window.setTimeout(function () {
-    document.body.removeChild(script);
-  }, 0);
+  // Run the script
+  if (typeof Danbooru !== "undefined") {
+    bbbScript();
+  } else {
+    // Danbooru script isn't loaded yet, wait for script to load first
+    const script = document.querySelector(`script[src*="/application-"]`);
+    if (script) {
+      script.addEventListener("load", bbbScript, true);
+    }
+  }
 }
 
 bbbInit();
