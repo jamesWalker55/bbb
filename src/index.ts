@@ -276,7 +276,7 @@ function main() {
   };
 
   /* Global Variables */
-  var bbb = {
+  const bbb = {
     // Container for script info.
     autocomplete: {},
     blacklist: {
