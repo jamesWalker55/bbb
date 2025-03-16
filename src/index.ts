@@ -297,9 +297,6 @@ function main() {
       searches: [],
       style_list: {},
     },
-    dialog: {
-      queue: [],
-    },
     drag_scroll: {
       lastX: undefined,
       lastY: undefined,
