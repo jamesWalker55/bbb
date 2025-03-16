@@ -1,0 +1,19 @@
+<div id="bbb-dialog-blocker">
+  <div
+    id="bbb-dialog-window"
+    tabindex="-1"
+    <% if (!(showOk || showCancel)) { %> data-content <% } %>
+  >
+    <% if (showOk || showCancel) { %>
+    <div data-content class="bbb-dialog-content-div"></div>
+    <div data-listener-buttons class="bbb-dialog-button-div">
+      <% if (showOk) { %>
+      <a data-listener-ok href="#" class="bbb-dialog-button">OK</a>
+      <% } %>
+      <% if (showCancel) { %>
+      <a data-listener-cancel href="#" class="bbb-dialog-button" style="float: right">Cancel</a>
+      <% } %>
+    </div>
+    <% } %>
+  </div>
+</div>

@@ -1,4 +1,5 @@
 import { Settings } from "./settings";
+import { showDialog } from "./ui";
 
 const BH = {
   /** Add a leading and trailing space. */
@@ -3924,7 +3925,7 @@ function main() {
               var newName = cleanName + "_" + timestamp("y-m-d_hh:mm:ss:ms");
 
               this.value = cleanName = newName;
-              bbbDialog(
+              showDialog(
                 "The group name you tried to use is already in use by another group and has been changed to the following:<br>" +
                   newName,
               );
@@ -4635,7 +4636,7 @@ function main() {
       object[prop] = tags;
     };
 
-    bbbDialog(tagEditBlocker, { ok: tagEditOk, cancel: true });
+    showDialog(tagEditBlocker, { ok: tagEditOk, cancel: true });
     tagEditArea.focus();
     tagEditArea.setSelectionRange(0, 0);
 
@@ -4690,7 +4691,7 @@ function main() {
           bbb.flags.new_storage_notice = true;
 
           var newStorageNotice = function () {
-            bbbDialog(
+            showDialog(
               'As of version 7.3, BBB has changed the way it saves information. You currently don\'t have any settings saved with the new method, but do have settings saved with the old method. Before clicking anything, please read the following:<ul><li>Please check the BBB settings menu and confirm that everything is correct. If it is, click "save & close" to transfer your settings over. If your settings are not correct, you may restore from a backup and then save.</li><li>Alternatively, if ' +
                 domain +
                 " (" +
@@ -4965,18 +4966,18 @@ function main() {
         checkUser(bbb.user, bbb.options);
         convertSettings("backup");
         reloadMenu();
-        bbbDialog(
+        showDialog(
           'Backup settings loaded successfully. After reviewing the settings to ensure they are correct, please click "save & close" to finalize the restore.',
         );
       } catch (error) {
         if (error instanceof SyntaxError)
-          bbbDialog(
+          showDialog(
             "The backup does not appear to be formatted correctly. Please make sure everything was pasted correctly/completely and that only one backup is provided.",
           );
-        else bbbDialog("Unexpected error: " + error.message);
+        else showDialog("Unexpected error: " + error.message);
       }
     } else
-      bbbDialog(
+      showDialog(
         "A backup could not be detected in the text provided. Please make sure everything was pasted correctly/completely.",
       );
   }
@@ -8805,7 +8806,7 @@ function main() {
         "):\r\n\r\n" +
         jsonString +
         "\r\n";
-      bbbDialog(textarea);
+      showDialog(textarea);
     }
 
     var linkId = uniqueIdNum();
@@ -8995,129 +8996,6 @@ function main() {
       status.style.display = "block";
     // If requests are done, hide the notice.
     else status.style.display = "none";
-  }
-
-  function bbbDialog(content, properties) {
-    // Open a dialog window that can have a predefined ok button (default) and/or cancel button. The properties object specifies dialog behavior and has the following values:
-    // ok/cancel: true to display the button, false to hide the button, function to display the button and specify a custom function for it
-    // condition: string to name a basic flag that will be checked/set by a dialog before displaying it, function to check custom conditions for a dialog before displaying it
-    // important: true to prioritize a dialog if it goes in the queue, false to allow a dialog to go to the end of the queue as normal
-
-    var prop = properties || {};
-    var okButton = prop.ok === undefined ? true : prop.ok;
-    var cancelButton = prop.cancel === undefined ? false : prop.cancel;
-    var condition = prop.condition === undefined ? false : prop.condition;
-    var important = prop.important === undefined ? false : prop.important;
-
-    // Queue the dialog window if one is already open.
-    if (document.getElementById("bbb-dialog-blocker")) {
-      if (important)
-        bbb.dialog.queue.unshift({ content: content, properties: properties });
-      else bbb.dialog.queue.push({ content: content, properties: properties });
-
-      return;
-    }
-
-    // Test whether the dialog window should be allowed to display.
-    if (condition) {
-      var conditionType = typeof condition;
-
-      if (
-        (conditionType === "string" && bbb.flags[condition]) ||
-        (conditionType === "function" && condition())
-      ) {
-        nextBbbDialog();
-        return;
-      } else if (conditionType === "string") bbb.flags[condition] = true;
-    }
-
-    // Create the dialog window.
-    var blockDiv = document.createElement("div");
-    blockDiv.id = "bbb-dialog-blocker";
-
-    var windowDiv = document.createElement("div");
-    windowDiv.id = "bbb-dialog-window";
-    windowDiv.tabIndex = "-1";
-    blockDiv.appendChild(windowDiv);
-
-    var contentDiv = windowDiv;
-
-    if (okButton) {
-      var ok = document.createElement("a");
-      ok.innerHTML = "OK";
-      ok.href = "#";
-      ok.className = "bbb-dialog-button";
-
-      if (typeof okButton === "function")
-        ok.addEventListener("click", okButton, false);
-
-      ok.addEventListener("click", closeBbbDialog, false);
-
-      okButton = ok;
-    }
-
-    if (cancelButton) {
-      var cancel = document.createElement("a");
-      cancel.innerHTML = "Cancel";
-      cancel.href = "#";
-      cancel.className = "bbb-dialog-button";
-      cancel.style.cssFloat = "right";
-
-      if (typeof cancelButton === "function")
-        cancel.addEventListener("click", cancelButton, false);
-
-      cancel.addEventListener("click", closeBbbDialog, false);
-
-      cancelButton = cancel;
-    }
-
-    if (okButton || cancelButton) {
-      contentDiv = document.createElement("div");
-      contentDiv.className = "bbb-dialog-content-div";
-      windowDiv.appendChild(contentDiv);
-
-      var buttonDiv = document.createElement("div");
-      buttonDiv.className = "bbb-dialog-button-div";
-      windowDiv.appendChild(buttonDiv);
-
-      if (okButton) buttonDiv.appendChild(okButton);
-
-      if (cancelButton) buttonDiv.appendChild(cancelButton);
-
-      // Only allow left clicks to trigger the prompt buttons.
-      buttonDiv.addEventListener(
-        "click",
-        function (event) {
-          if (event.button !== 0) event.stopPropagation();
-        },
-        true,
-      );
-    }
-
-    if (typeof content === "string") contentDiv.innerHTML = content;
-    else contentDiv.appendChild(content);
-
-    document.body.appendChild(blockDiv);
-
-    (okButton || cancelButton || windowDiv).focus();
-  }
-
-  function closeBbbDialog(event) {
-    // Close the current dialog window.
-    var dialogBlocker = document.getElementById("bbb-dialog-blocker");
-
-    if (dialogBlocker) document.body.removeChild(dialogBlocker);
-
-    nextBbbDialog();
-
-    event.preventDefault();
-  }
-
-  function nextBbbDialog() {
-    // Open the next queued dialog window.
-    var nextDialog = bbb.dialog.queue.shift();
-
-    if (nextDialog) bbbDialog(nextDialog.content, nextDialog.properties);
   }
 
   function thumbSearchMatch(post, searchArray) {
@@ -12451,7 +12329,7 @@ function main() {
       }
     };
 
-    bbbDialog(content, { ok: okFunc, cancel: true });
+    showDialog(content, { ok: okFunc, cancel: true });
   }
 
   function localStorageDialog() {
@@ -12570,7 +12448,7 @@ function main() {
         if (cleanCur) retryLocalStorage();
       } else {
         // Start cycling through domains.
-        bbbDialog(
+        showDialog(
           "Currently cleaning local storage and loading the next domain. Please wait...",
           { ok: false, important: true },
         );
@@ -12591,7 +12469,7 @@ function main() {
       createCookie("bbb_ignore_storage", 1);
     };
 
-    bbbDialog(content, { ok: okFunc, cancel: cancelFunc });
+    showDialog(content, { ok: okFunc, cancel: cancelFunc });
   }
 
   function cleanLocalStorage(mode) {
@@ -12661,7 +12539,7 @@ function main() {
       var origURL = getVar("clean_origurl");
 
       bbb.flags.local_storage_full = true; // Keep the cycled domains from triggering storage problems
-      bbbDialog(
+      showDialog(
         "Currently cleaning local storage and loading the next domain. Please wait...",
         { ok: false, important: true },
       );
