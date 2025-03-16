@@ -319,7 +319,11 @@ function main() {
       sidebar: undefined,
       top: undefined,
     },
-    flags: {},
+    flags: {
+      thumbs_xml: false,
+      endless_xml: false,
+      paginator_xml: false,
+    },
     gm_data: undefined,
     groups: undefined,
     hotkeys: {
