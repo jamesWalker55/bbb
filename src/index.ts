@@ -1,4 +1,159 @@
-// Have a nice day. - A Pseudonymous Coder
+const BH = {
+  /** Add a leading and trailing space. */
+  spacePad(x: string) {
+    return x.length ? " " + x + " " : "";
+  },
+  /** Remove leading, trailing, and multiple spaces. */
+  spaceClean(x: string) {
+    return x.replace(/\s+/g, " ").replace(/^\s|\s$/g, "");
+  },
+  /** Remove extra commas along with leading, trailing, and multiple spaces. */
+  tagClean(x: string) {
+    return x
+      .replace(/(?:^|[\s,]+)(%?\))(?:$|\s+)/, " $1 ")
+      .replace(/(?:^|\s+)([~-]*\(%?)(?:$|[\s,]+)/g, " $1 ")
+      .replace(/[\s,]*,[\s,]*/g, ", ")
+      .replace(/[\s,]+$|^[\s,]+/g, "")
+      .replace(/\s+/g, " ");
+  },
+  /** Turn a string into a hash using the current Danbooru hash method. */
+  hash(x: string) {
+    var hash = 5381;
+    var i = x.length;
+
+    while (i) hash = (hash * 33) ^ x.charCodeAt(--i);
+
+    return hash >>> 0;
+  },
+  /** Encode a number to base62. */
+  encode62(x: number) {
+    const encodeChars =
+      "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    let encoded = "";
+    let num = x;
+
+    if (num === 0) {
+      encoded = encodeChars[0];
+    } else {
+      while (num > 0) {
+        encoded = encodeChars[num % 62] + encoded;
+        num = Math.floor(num / 62);
+      }
+    }
+
+    return encoded;
+  },
+  /** Search an element's successive parent nodes for a specific tag name or until the amount limit is hit. */
+  parent(el: Element, parentName: string, limit: number = 1): Element | null {
+    parentName = parentName.toUpperCase();
+
+    for (let i = 0; i < limit; i++) {
+      const parent = el.parentElement;
+
+      if (parent && parent.tagName === parentName) {
+        return parent;
+      } else if (parent) {
+        el = parent;
+      } else {
+        return null;
+      }
+    }
+
+    return null;
+  },
+  getPadding(el: Element) {
+    // Get all the padding measurements of an element including the total width and height.
+    if (window.getComputedStyle) {
+      var computed = window.getComputedStyle(el, null);
+      var paddingLeft = parseFloat(computed.paddingLeft);
+      var paddingRight = parseFloat(computed.paddingRight);
+      var paddingTop = parseFloat(computed.paddingTop);
+      var paddingBottom = parseFloat(computed.paddingBottom);
+      var paddingHeight = paddingTop + paddingBottom;
+      var paddingWidth = paddingLeft + paddingRight;
+      return {
+        width: paddingWidth,
+        height: paddingHeight,
+        top: paddingTop,
+        bottom: paddingBottom,
+        left: paddingLeft,
+        right: paddingRight,
+      };
+    } else {
+      return null;
+    }
+  },
+  /** Test an element for one or more collections of classes. */
+  hasClass(el: Element, ...args: string[]) {
+    const classList = el.classList;
+
+    for (let i = 0, il = args.length; i < il; i++) {
+      const classes = BH.spaceClean(args[i]);
+
+      if (!classes) continue;
+
+      const classArray = classes.split(" ");
+      let hasClass = true;
+
+      for (let j = 0, jl = classArray.length; j < jl; j++) {
+        if (!classList.contains(classArray[j])) {
+          hasClass = false;
+          break;
+        }
+      }
+
+      if (hasClass) return true;
+    }
+
+    return false;
+  },
+  /** Add one or more classes to an element. */
+  addClass(el: Element, classString: string) {
+    const classes = BH.spaceClean(classString);
+    if (!classes) return;
+
+    const classArray = classes.split(" ");
+
+    for (let i = 0, il = classArray.length; i < il; i++)
+      el.classList.add(classArray[i]);
+  },
+  /** Remove one or more classes from an element. */
+  removeClass(el: Element, classString: string) {
+    const classes = BH.spaceClean(classString);
+
+    if (!classes) return;
+
+    const classList = el.classList;
+    const classArray = classes.split(" ");
+
+    for (let i = 0, il = classArray.length; i < il; i++)
+      classList.remove(classArray[i]);
+  },
+  /** Watch for new nodes. */
+  watchNodes(el: Element, func: () => void) {
+    if (window.MutationObserver) {
+      const observer = new window.MutationObserver(func);
+      observer.observe(el, { childList: true, subtree: true });
+    } else {
+      el.addEventListener("DOMNodeInserted", func, false);
+    }
+  },
+  /** Override Danbooru's click event listeners by capturing clicks on the parent node and stopping them. */
+  overrideClick(el: Element, func: (e: MouseEvent) => void) {
+    el.parentNode?.addEventListener(
+      "click",
+      (_e) => {
+        const e = _e as MouseEvent;
+
+        if (e.target !== el || e.button !== 0) return;
+
+        func(e);
+        e.stopPropagation();
+      },
+      true,
+    );
+  },
+};
 
 function main() {
   // Wrapper for injecting the script into the document.
@@ -246,7 +401,7 @@ function main() {
     } else if (typeof value !== "undefined")
       this.setAttribute("data-" + name, value);
     else if (name) return this.getAttribute("data-" + name);
-    else if (this.bbbHasClass("post-preview")) return scrapeThumb(this);
+    else if (BH.hasClass(this, "post-preview")) return scrapeThumb(this);
     else {
       // Always try to send the HTML element in order to provide the most information.
       var parent = this;
@@ -2061,7 +2216,7 @@ function main() {
         }
 
         // Prepare the post information.
-        var tagLinks = postInfo.tag_string.bbbSpacePad();
+        var tagLinks = BH.spacePad(postInfo.tag_string);
         var generalTags = postInfo.tag_string_general.split(" ");
         var artistTags = postInfo.tag_string_artist.split(" ");
         var copyrightTags = postInfo.tag_string_copyright.split(" ");
@@ -2073,7 +2228,7 @@ function main() {
         for (j = 0, jl = generalTags.length; j < jl; j++) {
           tag = generalTags[j];
           tagLinks = tagLinks.replace(
-            tag.bbbSpacePad(),
+            BH.spacePad(tag),
             ' <span class="category-0"> <a href="/posts?tags=' +
               encodeURIComponent(tag) +
               limit +
@@ -2086,7 +2241,7 @@ function main() {
         for (j = 0, jl = artistTags.length; j < jl; j++) {
           tag = artistTags[j];
           tagLinks = tagLinks.replace(
-            tag.bbbSpacePad(),
+            BH.spacePad(tag),
             ' <span class="category-1"> <a href="/posts?tags=' +
               encodeURIComponent(tag) +
               limit +
@@ -2099,7 +2254,7 @@ function main() {
         for (j = 0, jl = copyrightTags.length; j < jl; j++) {
           tag = copyrightTags[j];
           tagLinks = tagLinks.replace(
-            tag.bbbSpacePad(),
+            BH.spacePad(tag),
             ' <span class="category-3"> <a href="/posts?tags=' +
               encodeURIComponent(tag) +
               limit +
@@ -2112,7 +2267,7 @@ function main() {
         for (j = 0, jl = characterTags.length; j < jl; j++) {
           tag = characterTags[j];
           tagLinks = tagLinks.replace(
-            tag.bbbSpacePad(),
+            BH.spacePad(tag),
             ' <span class="category-4"> <a href="/posts?tags=' +
               encodeURIComponent(tag) +
               limit +
@@ -2125,7 +2280,7 @@ function main() {
         for (j = 0, jl = metaTags.length; j < jl; j++) {
           tag = metaTags[j];
           tagLinks = tagLinks.replace(
-            tag.bbbSpacePad(),
+            BH.spacePad(tag),
             ' <span class="category-5"> <a href="/posts?tags=' +
               encodeURIComponent(tag) +
               limit +
@@ -2404,10 +2559,10 @@ function main() {
     // Highlight the post we're on.
     var activeThumb = getId("post_" + activePost.id, thumbDiv);
 
-    if (activeThumb) activeThumb.bbbAddClass("current-post");
+    if (activeThumb) BH.addClass(activeThumb, "current-post");
 
     // Make the show/hide links work.
-    previewLink.bbbOverrideClick(function (event) {
+    BH.overrideClick(previewLink, function (event) {
       if (thumbDiv.style.display === "block") {
         thumbDiv.style.display = "none";
         previewLink.innerHTML = "show &raquo;";
@@ -2790,7 +2945,7 @@ function main() {
           " " + tag.textContent.replace(/(\S)\s+(\S)/g, "$1_$2");
     }
 
-    return categoryString.bbbSpaceClean();
+    return BH.spaceClean(categoryString);
   }
 
   function scrapeThumb(post) {
@@ -2808,7 +2963,7 @@ function main() {
       pixiv_id: Number(post.getAttribute("data-pixiv-id")) || null,
       fav_count: Number(post.getAttribute("data-fav-count")) || 0,
       has_children: post.getAttribute("data-has-children") === "true",
-      has_active_children: post.bbbHasClass("post-status-has-children"), // Assumption. Basically a flag for the children class.
+      has_active_children: BH.hasClass(post, "post-status-has-children"), // Assumption. Basically a flag for the children class.
       is_favorited: post.getAttribute("data-is-favorited") === "true",
       normalized_source: post.getAttribute("data-normalized-source") || "",
       parent_id: post.getAttribute("data-parent-id")
@@ -2889,7 +3044,7 @@ function main() {
       return document.querySelectorAll(".post-preview");
     else if (
       target instanceof DocumentFragment ||
-      !target.bbbHasClass("post-preview")
+      !BH.hasClass(target, "post-preview")
     )
       // All posts in a specific element.
       return target.querySelectorAll(".post-preview");
@@ -2902,7 +3057,7 @@ function main() {
     if (!target || target === document)
       // Paginator in the document.
       return document.getElementsByClassName("paginator")[0];
-    else if (!target.bbbHasClass("paginator"))
+    else if (!BH.hasClass(target, "paginator"))
       // Paginator in a specific element.
       return target.getElementsByClassName("paginator")[0];
     // Single specific paginator.
@@ -3074,7 +3229,7 @@ function main() {
     else if (gLoc === "favorites") {
       tags = document.getElementById("tags");
       tags = tags
-        ? tags.getAttribute("value").replace("fav:", "ordfav:").bbbSpaceClean()
+        ? BH.spaceClean(tags.getAttribute("value").replace("fav:", "ordfav:"))
         : ""; // Use getAttribute to avoid potential user changes to the input.
     }
 
@@ -3410,7 +3565,7 @@ function main() {
     var scrollDivDiff = menu.offsetHeight - scrollDiv.clientHeight;
 
     scrollDiv.style.maxHeight =
-      viewHeight - scrollDiv.bbbGetPadding().height - scrollDivDiff - 50 + "px"; // Subtract 50 for margins (25 each).
+      viewHeight - BH.getPadding(scrollDiv).height - scrollDivDiff - 50 + "px"; // Subtract 50 for margins (25 each).
     scrollDiv.style.minWidth = 901 + barWidth + 3 + "px"; // Should keep the potential scrollbar from intruding on the original drawn layout if I'm thinking about this correctly. Seems to work in practice anyway.
     scrollDiv.style.paddingLeft = barWidth + 3 + "px";
 
@@ -3604,8 +3759,8 @@ function main() {
           "change",
           function () {
             bbb.user[settingName] = optionObject.isTagInput
-              ? this.value.bbbTagClean()
-              : this.value.bbbSpaceClean();
+              ? BH.tagClean(this.value)
+              : BH.spaceClean(this.value);
             bbb.settings.changed[settingName] = true;
           },
           false,
@@ -3802,7 +3957,7 @@ function main() {
       nameInput.addEventListener(
         "change",
         function () {
-          borderItem.tags = this.value.bbbTagClean();
+          borderItem.tags = BH.tagClean(this.value);
         },
         false,
       );
@@ -3837,7 +3992,7 @@ function main() {
     colorInput.addEventListener(
       "change",
       function () {
-        borderItem.border_color = this.value.bbbSpaceClean();
+        borderItem.border_color = BH.spaceClean(this.value);
       },
       false,
     );
@@ -3929,7 +4084,7 @@ function main() {
     nameInput.addEventListener(
       "change",
       function () {
-        var cleanName = this.value.bbbSpaceClean();
+        var cleanName = BH.spaceClean(this.value);
 
         if (cleanName === "")
           this.value = cleanName = "New_" + timestamp("y-m-d_hh:mm:ss:ms");
@@ -4038,7 +4193,7 @@ function main() {
     tagsInput.addEventListener(
       "change",
       function () {
-        groupItem.tags = this.value.bbbTagClean();
+        groupItem.tags = BH.tagClean(this.value);
       },
       false,
     );
@@ -4444,7 +4599,7 @@ function main() {
     for (var i = 0, il = optionElements.length; i < il; i++) {
       var optionElement = optionElements[i];
 
-      optionElement.bbbRemoveClass("bbb-no-highlight");
+      BH.removeClass(optionElement, "bbb-no-highlight");
       optionElement.bbbInfo("bbb-index", i);
     }
   }
@@ -4480,9 +4635,9 @@ function main() {
     var section = optionElement.parentNode;
     var index = Number(optionElement.bbbInfo("bbb-index"));
 
-    optionElement.bbbAddClass("bbb-no-highlight");
-    optionElement.nextSibling.bbbAddClass("bbb-no-highlight");
-    section.bbbAddClass("bbb-insert-highlight");
+    BH.addClass(optionElement, "bbb-no-highlight");
+    BH.addClass(optionElement.nextSibling, "bbb-no-highlight");
+    BH.addClass(section, "bbb-insert-highlight");
     bbb.el.menu.window.addEventListener(
       "click",
       function insertListOption(event) {
@@ -4503,7 +4658,7 @@ function main() {
         }
 
         resetListElements(section);
-        section.bbbRemoveClass("bbb-insert-highlight");
+        BH.removeClass(section, "bbb-insert-highlight");
         bbb.el.menu.window.removeEventListener("click", insertListOption, true);
       },
       true,
@@ -4514,7 +4669,7 @@ function main() {
     // Prepare to create an item and wait for the user to click where it'll go.
     var section = optionElement.parentNode;
 
-    section.bbbAddClass("bbb-insert-highlight");
+    BH.addClass(section, "bbb-insert-highlight");
     bbb.el.menu.window.addEventListener(
       "click",
       function insertListOption(event) {
@@ -4538,7 +4693,7 @@ function main() {
         }
 
         resetListElements(section);
-        section.bbbRemoveClass("bbb-insert-highlight");
+        BH.removeClass(section, "bbb-insert-highlight");
         bbb.el.menu.window.removeEventListener("click", insertListOption, true);
       },
       true,
@@ -4620,10 +4775,10 @@ function main() {
 
     if (tab === activeTab) return;
 
-    activeTab.bbbRemoveClass("bbb-active-tab");
+    BH.removeClass(activeTab, "bbb-active-tab");
     bbb.el.menu[activeTab.name + "Page"].style.display = "none";
     bbb.el.menu.scrollDiv.scrollTop = 0;
-    tab.bbbAddClass("bbb-active-tab");
+    BH.addClass(tab, "bbb-active-tab");
     bbb.el.menu[tab.name + "Page"].style.display = "block";
   }
 
@@ -4664,7 +4819,7 @@ function main() {
     var scrollDivDiff = menu.offsetHeight - scrollDiv.clientHeight;
 
     scrollDiv.style.maxHeight =
-      viewHeight - scrollDiv.bbbGetPadding().height - scrollDivDiff - 50 + "px"; // Subtract 50 for margins (25 each).
+      viewHeight - BH.getPadding(scrollDiv).height - scrollDivDiff - 50 + "px"; // Subtract 50 for margins (25 each).
     bbb.timers.adjustMenu = 0;
   }
 
@@ -5248,7 +5403,7 @@ function main() {
 
     if (!image) return;
 
-    image.bbbOverrideClick(function () {
+    BH.overrideClick(image, function () {
       if (!Danbooru.Note.TranslationMode.active && !bbb.drag_scroll.moved)
         Danbooru.Note.Box.toggle_all();
     });
@@ -5305,7 +5460,7 @@ function main() {
         // Make translation mode work on non-video content.
         // Set up/override the translate link and hotkey if notes aren't locked.
         if (!document.getElementById("note-locked-notice") && translateLink) {
-          translateLink.bbbOverrideClick(Danbooru.Note.TranslationMode.toggle);
+          BH.overrideClick(translateLink, Danbooru.Note.TranslationMode.toggle);
           createHotkey("78", Danbooru.Note.TranslationMode.toggle);
         }
       } else {
@@ -5323,7 +5478,7 @@ function main() {
         Danbooru.Note.TranslationMode.start = toggleFunction;
         Danbooru.Note.Edit.show = toggleFunction;
 
-        if (translateLink) translateLink.bbbOverrideClick(toggleFunction);
+        if (translateLink) BH.overrideClick(translateLink, toggleFunction);
 
         createHotkey("78", toggleFunction); // Override the hotkey for "N".
       }
@@ -5337,7 +5492,7 @@ function main() {
       Danbooru.Note.TranslationMode.start = toggleFunction;
       Danbooru.Note.Edit.show = toggleFunction;
 
-      if (translateLink) translateLink.bbbOverrideClick(toggleFunction);
+      if (translateLink) BH.overrideClick(translateLink, toggleFunction);
 
       createHotkey("78", toggleFunction); // Override the hotkey for "N".
     }
@@ -5423,7 +5578,7 @@ function main() {
     var image = document.getElementById("image");
 
     if (postInfo.has_large && image) {
-      image.bbbOverrideClick(function () {
+      BH.overrideClick(image, function () {
         if (!Danbooru.Note.TranslationMode.active && !bbb.drag_scroll.moved)
           swapPost();
       });
@@ -5689,7 +5844,7 @@ function main() {
     var resizeLinkHeight = bbb.el.resizeLinkHeight;
     var availableWidth =
       imgContainer.clientWidth ||
-      contentDiv.clientWidth - contentDiv.bbbGetPadding().width;
+      contentDiv.clientWidth - BH.getPadding(contentDiv).width;
     var availableHeight = document.documentElement.clientHeight - 10;
     var targetCurrentWidth =
       target.clientWidth ||
@@ -6369,7 +6524,7 @@ function main() {
       if (!img) continue;
 
       var postInfo = post.bbbInfo();
-      var link = img.bbbParent("A", 3);
+      var link = BH.parent(img, "A", 3);
       var tagsStr = postInfo.tag_string || "";
       var userStr = postInfo.uploader_name
         ? " user:" + postInfo.uploader_name
@@ -6386,7 +6541,7 @@ function main() {
       var borderStyle; // If/else variable.
 
       // Skip thumbnails that have already been done.
-      if (link.bbbHasClass("bbb-thumb-link")) continue;
+      if (BH.hasClass(link, "bbb-thumb-link")) continue;
 
       // Create title information.
       img.setAttribute(titleAttr, titleStr);
@@ -6395,14 +6550,14 @@ function main() {
       post.bbbInfo("file-url-desc", postInfo.file_url_desc);
 
       // Give the thumbnail link an identifying class.
-      link.bbbAddClass("bbb-thumb-link");
+      BH.addClass(link, "bbb-thumb-link");
 
       // Give the post container an ID class for resolving cases where the same post shows up on the page multiple times.
-      post.bbbAddClass("post_" + postInfo.id);
+      BH.addClass(post, "post_" + postInfo.id);
 
       // Correct parent status borders on "no active children" posts for logged out users.
       if (postInfo.has_children && show_deleted)
-        post.bbbAddClass("post-status-has-children");
+        BH.addClass(post, "post-status-has-children");
 
       // Secondary custom tag borders.
       if (custom_tag_borders) {
@@ -6426,7 +6581,7 @@ function main() {
           secondaryLength = secondary.length;
 
           if (secondaryLength) {
-            link.bbbAddClass("bbb-custom-tag");
+            BH.addClass(link, "bbb-custom-tag");
 
             if (
               secondaryLength === 1 ||
@@ -6501,10 +6656,10 @@ function main() {
           } else styleList[postInfo.id] = false;
         } else if (
           styleList[postInfo.id] !== false &&
-          !post.bbbHasClass("bbb-custom-tag")
+          !BH.hasClass(post, "bbb-custom-tag")
         ) {
           // Post is already tested, but needs to be set up again.
-          link.bbbAddClass("bbb-custom-tag");
+          BH.addClass(link, "bbb-custom-tag");
           link.setAttribute("style", styleList[postInfo.id]);
         }
       }
@@ -6798,7 +6953,7 @@ function main() {
         if (!thumbImg) continue;
 
         var thumbEl = post.getElementsByClassName("preview")[0] || post;
-        thumbEl.bbbAddClass("bbb-thumb-info-parent");
+        BH.addClass(thumbEl, "bbb-thumb-info-parent");
 
         var postLink = thumbEl.getElementsByTagName("a")[0];
         var before = postLink ? postLink.nextElementSibling : undefined;
@@ -6861,7 +7016,7 @@ function main() {
         postUrl || "/data/DDL unavailable for post " + postInfo.id + ".jpg";
 
       // Disable filtered posts.
-      if (post.bbbHasClass("blacklisted-active", "bbb-quick-search-filtered"))
+      if (BH.hasClass(post, "blacklisted-active", "bbb-quick-search-filtered"))
         unsetDDL(ddlLink);
     }
   }
@@ -6873,7 +7028,7 @@ function main() {
     if (
       !direct_downloads ||
       !ddlLink ||
-      post.bbbHasClass("blacklisted-active", "bbb-quick-search-filtered")
+      BH.hasClass(post, "blacklisted-active", "bbb-quick-search-filtered")
     )
       return;
 
@@ -7604,7 +7759,7 @@ function main() {
     var blacklistedPost = blacklistedPosts[0];
 
     while (blacklistedPost) {
-      blacklistedPost.bbbRemoveClass("blacklisted blacklisted-active");
+      BH.removeClass(blacklistedPost, "blacklisted blacklisted-active");
       enablePostDDL(blacklistedPost);
       blacklistedPost = blacklistedPosts[0];
     }
@@ -7625,11 +7780,11 @@ function main() {
     var blacklistDisabled = cookies.dab === "1" && blacklistBox;
 
     for (i = 0, il = blacklistTags.length; i < il; i++) {
-      var blacklistTag = blacklistTags[i].bbbSpaceClean();
+      var blacklistTag = BH.spaceClean(blacklistTags[i]);
       var blacklistSearch = createSearch(blacklistTag);
 
       if (blacklistSearch[0]) {
-        var entryHash = blacklistTag.bbbHash();
+        var entryHash = BH.hash(blacklistTag);
         var entryDisabled =
           blacklistDisabled ||
           (blacklist_session_toggle && cookies["b" + entryHash] === "1");
@@ -7655,7 +7810,7 @@ function main() {
           blacklistLink.innerHTML =
             blacklistTag.length < 19
               ? blacklistTag + " "
-              : blacklistTag.substring(0, 18).bbbSpaceClean() + "... ";
+              : BH.spaceClean(blacklistTag.substring(0, 18)) + "... ";
           blacklistLink.className =
             "bbb-blacklist-entry-" +
             i +
@@ -7764,7 +7919,7 @@ function main() {
         createCookie("b" + entry.hash, 1);
 
       for (i = 0, il = links.length; i < il; i++)
-        links[i].bbbAddClass("blacklisted-active");
+        BH.addClass(links[i], "blacklisted-active");
 
       for (i = 0, il = matches.length; i < il; i++) {
         id = matches[i];
@@ -7788,7 +7943,7 @@ function main() {
       if (blacklist_session_toggle) createCookie("b" + entry.hash, 0, -1);
 
       for (i = 0, il = links.length; i < il; i++)
-        links[i].bbbRemoveClass("blacklisted-active");
+        BH.removeClass(links[i], "blacklisted-active");
 
       for (i = 0, il = matches.length; i < il; i++) {
         id = matches[i];
@@ -7885,8 +8040,8 @@ function main() {
     }
 
     // Check the saved blacklist info for the post and change the thumbnail as needed.
-    if (matchList.count !== false && !el.bbbHasClass("blacklisted")) {
-      el.bbbAddClass("blacklisted");
+    if (matchList.count !== false && !BH.hasClass(el, "blacklisted")) {
+      BH.addClass(el, "blacklisted");
 
       if (matchList.count > 0 && matchList.override !== true)
         blacklistHidePost(el);
@@ -7930,8 +8085,8 @@ function main() {
           var i, il; // Loop variables.
 
           if (
-            !el.bbbHasClass("blacklisted-active") ||
-            (target.tagName === "A" && !target.bbbHasClass("bbb-thumb-link"))
+            !BH.hasClass(el, "blacklisted-active") ||
+            (target.tagName === "A" && !BH.hasClass(target, "bbb-thumb-link"))
           )
             // If the thumb isn't currently hidden or a link that isn't the thumb link is clicked, allow the link click.
             return;
@@ -7965,7 +8120,7 @@ function main() {
               blacklistLink.innerHTML =
                 blacklistTag.length < 51
                   ? blacklistTag + " "
-                  : blacklistTag.substring(0, 50).bbbSpaceClean() + "...";
+                  : BH.spaceClean(blacklistTag.substring(0, 50)) + "...";
               blacklistLink.addEventListener(
                 "click",
                 blacklistEntryLinkToggle,
@@ -8070,7 +8225,7 @@ function main() {
   function blacklistSmartView(el) {
     // Set up the smart view event listeners.
     var img = el.getElementsByTagName("img")[0];
-    var link = img ? img.bbbParent("A", 3) : undefined;
+    var link = img ? BH.parent(img, "A", 3) : undefined;
 
     if (!link) return;
 
@@ -8120,7 +8275,7 @@ function main() {
       else smartView.last = time; // Adjust the object.
     }
 
-    if (!el.bbbHasClass("blacklisted-active")) smartView[id] = time;
+    if (!BH.hasClass(el, "blacklisted-active")) smartView[id] = time;
     else delete smartView[id];
 
     localStorage.bbbSetItem("bbb_smart_view", JSON.stringify(smartView));
@@ -8159,7 +8314,7 @@ function main() {
       if (postEl && postEl.tagName === "VIDEO") postEl.pause();
     }
 
-    post.bbbAddClass("blacklisted-active");
+    BH.addClass(post, "blacklisted-active");
     disablePostDDL(post);
   }
 
@@ -8178,7 +8333,7 @@ function main() {
         postEl.play();
     }
 
-    post.bbbRemoveClass("blacklisted-active");
+    BH.removeClass(post, "blacklisted-active");
     enablePostDDL(post);
   }
 
@@ -8314,7 +8469,7 @@ function main() {
     if (postInfo.is_banned) flags += " banned";
     if (postInfo.is_flagged) flags += " flagged";
 
-    return flags.bbbSpaceClean();
+    return BH.spaceClean(flags);
   }
 
   function postClasses(postInfo) {
@@ -8336,7 +8491,7 @@ function main() {
 
   function tagStringList(string) {
     // Create a Danbooru style tag string list out of the first 5 tags for a category.
-    var array = string.bbbSpaceClean().split(" ");
+    var array = BH.spaceClean(string).split(" ");
     var length = array.length;
     var result;
 
@@ -8377,8 +8532,7 @@ function main() {
       if (artists !== "") artists = " drawn by " + artists;
 
       desc =
-        (characters + copyrights + artists).bbbSpaceClean() ||
-        "#" + postInfo.id;
+        BH.spaceClean(characters + copyrights + artists) || "#" + postInfo.id;
     } else desc = "";
 
     return desc;
@@ -8505,10 +8659,10 @@ function main() {
         /^https?:\/\/(?:(?:fc|th|pre|orig|img|prnt)\d{2}|origin-orig)\.deviantart\.net\/.+\/([a-z0-9_]+)_by_([a-z0-9_]+)-d([a-z0-9]+)\./i,
       ))
     ) {
-      title = urlReg[1]
-        .replace(/[^A-Za-z0-9]/g, " ")
-        .bbbSpaceClean()
-        .replace(/[ ]/g, "-");
+      title = BH.spaceClean(urlReg[1].replace(/[^A-Za-z0-9]/g, " ")).replace(
+        /[ ]/g,
+        "-",
+      );
       artist = urlReg[2].replace(/_/g, "-");
       id = parseInt(urlReg[3], 36);
       url = "https://www.deviantart.com/" + artist + "/art/" + title + "-" + id;
@@ -8654,7 +8808,7 @@ function main() {
         /^https?:\/\/(?:s3\.amazonaws\.com\/imgly_production|img\.ly\/system\/uploads)\/((?:\d{3}\/){3}|\d+\/)/i,
       ))
     ) {
-      id = parseInt(urlReg[1].replace(/[^0-9]/g, "") || 0).bbbEncode62();
+      id = BH.encode62(parseInt(urlReg[1].replace(/[^0-9]/g, "") || 0));
       url = "https://img.ly/" + id;
     } else if (
       !!(urlReg = source.match(
@@ -9200,21 +9354,21 @@ function main() {
       var filetype = " filetype:" + postInfo.file_ext;
 
       postSearchInfo = {
-        tags: postInfo.tag_string.bbbSpacePad(),
-        metatags: (
+        tags: BH.spacePad(postInfo.tag_string),
+        metatags: BH.spacePad(
           rating +
-          status +
-          user +
-          pools +
-          parent +
-          child +
-          isFav +
-          userId +
-          taggerId +
-          source +
-          approverId +
-          filetype
-        ).bbbSpacePad(),
+            status +
+            user +
+            pools +
+            parent +
+            child +
+            isFav +
+            userId +
+            taggerId +
+            source +
+            approverId +
+            filetype,
+        ),
         score: postInfo.score,
         favcount: postInfo.fav_count,
         id: postInfo.id,
@@ -9470,7 +9624,7 @@ function main() {
           // Prepare wildcard tags as regular expressions.
           mode.push(
             new RegExp(
-              escapeRegEx(searchTerm).replace(/\*/g, "S*").bbbSpacePad(),
+              BH.spacePad(escapeRegEx(searchTerm).replace(/\*/g, "S*")),
             ),
           );
         // Don't use "\\S*" here since escapeRegEx replaces * with \*. That escape carries over to the next replacement and makes us end up with "\\S*".
@@ -9497,7 +9651,7 @@ function main() {
                 tagName === "source" ||
                 tagName === "approverid")
             )
-              mode.push(new RegExp((tagName + ":\\S*").bbbSpacePad()));
+              mode.push(new RegExp(BH.spacePad(tagName + ":\\S*")));
             else if (
               tagValue === "none" &&
               (tagName === "pool" ||
@@ -9510,19 +9664,19 @@ function main() {
                 secondaryMode === "includes" ? "excludes" : "includes"; // Flip the include/exclude mode.
               mode = searchObject[primaryMode][secondaryMode];
 
-              mode.push(new RegExp((tagName + ":\\S*").bbbSpacePad()));
+              mode.push(new RegExp(BH.spacePad(tagName + ":\\S*")));
             } else if (tagValue === "active" && tagName === "pool")
               mode.push(
-                new RegExp((tagName + ":(collection|series)").bbbSpacePad()),
+                new RegExp(BH.spacePad(tagName + ":(collection|series)")),
               );
             else if (tagName === "source")
               // Append a wildcard to the end of "sources starting with the given value" searches.
               mode.push(
-                new RegExp((escapeRegEx(searchTerm) + "\\S*").bbbSpacePad()),
+                new RegExp(BH.spacePad(escapeRegEx(searchTerm) + "\\S*")),
               );
             // Allow all other values through (ex: parent:# & pool:series).
-            else mode.push(searchTerm.bbbSpacePad());
-          } else mode.push(searchTerm.bbbSpacePad());
+            else mode.push(BH.spacePad(searchTerm));
+          } else mode.push(BH.spacePad(searchTerm));
         }
       }
 
@@ -9670,7 +9824,7 @@ function main() {
 
       searchString = searchString.replace(
         groupPlaceholder,
-        "( " + groups[i].bbbSpaceClean() + " )",
+        "( " + BH.spaceClean(groups[i]) + " )",
       );
     }
 
@@ -9688,7 +9842,7 @@ function main() {
     for (var i = 0, il = groups.length; i < il; i++)
       groups[i] = cleanSearchGroups(groups[i]);
 
-    searchString = restoreSearchGroups(searchString, groups).bbbTagClean();
+    searchString = BH.tagClean(restoreSearchGroups(searchString, groups));
 
     return searchString;
   }
@@ -9712,7 +9866,7 @@ function main() {
     for (var i = 0, il = searchStrings.length; i < il; i++)
       searchStrings[i] = cleanSearchGroups(searchStrings[i]);
 
-    var single = searchStrings.join(", ").bbbTagClean();
+    var single = BH.tagClean(searchStrings.join(", "));
 
     return single;
   }
@@ -9848,11 +10002,11 @@ function main() {
 
           // Update the mark link if the paginator updates.
           if (paginator) {
-            paginator.bbbWatchNodes(function () {
+            BH.watchNodes(paginator, function () {
               var activePage =
                 paginator.getElementsByClassName("current-page")[0];
               var pageNumber =
-                (activePage ? activePage.textContent.bbbSpaceClean() : "1") ||
+                (activePage ? BH.spaceClean(activePage.textContent) : "1") ||
                 "1";
 
               if (pageNumber && pageNumber !== "1")
@@ -10609,7 +10763,7 @@ function main() {
       var pageItems = paginator.getElementsByTagName("li");
       var numPageItems = pageItems.length;
       var lastPageItem = pageItems[numPageItems - 1];
-      var activeNum = activePage.textContent.bbbSpaceClean();
+      var activeNum = BH.spaceClean(activePage.textContent);
       var lastNum; // If/else variable.
 
       if (activePage.parentNode === lastPageItem)
@@ -10617,8 +10771,9 @@ function main() {
         lastNum = activeNum;
       else {
         // In all other cases, there should always be a next page button and at least two other page items (1-X).
-        lastNum =
-          lastPageItem.previousElementSibling.textContent.bbbSpaceClean();
+        lastNum = BH.spaceClean(
+          lastPageItem.previousElementSibling.textContent,
+        );
 
         if (!bbbIsNum(lastNum))
           // Too many pages for the current user to view.
@@ -10655,7 +10810,7 @@ function main() {
       getId("bbb-page-counter-form", pageNav).addEventListener(
         "submit",
         function (event) {
-          var value = pageInput.value.bbbSpaceClean();
+          var value = BH.spaceClean(pageInput.value);
 
           if (value !== "")
             location.href = updateURLQuery(location.href, { page: value });
@@ -10665,7 +10820,7 @@ function main() {
         false,
       );
 
-      if (numString) paginator.bbbWatchNodes(pageCounter);
+      if (numString) BH.watchNodes(paginator, pageCounter);
 
       pageDiv.insertBefore(pageNav, pageDiv.firstElementChild);
     } // Update the last page in the page nav.
@@ -10758,7 +10913,7 @@ function main() {
               active !== searchPin &&
               active !== searchNegate)
           )
-            searchDiv.bbbRemoveClass("bbb-quick-search-show");
+            BH.removeClass(searchDiv, "bbb-quick-search-show");
         });
       },
       true,
@@ -10781,7 +10936,7 @@ function main() {
       "keydown",
       function (event) {
         if (event.keyCode === 27) {
-          var jQueryMenu = searchInput.bbbHasClass("ui-autocomplete-input")
+          var jQueryMenu = BH.hasClass(searchInput, "ui-autocomplete-input")
             ? $("#bbb-quick-search-input").autocomplete("widget")[0]
             : undefined;
 
@@ -10803,9 +10958,9 @@ function main() {
           else if (event.ctrlKey) {
             quickSearchNegateToggle();
             quickSearchToggle();
-          } else if (!searchDiv.bbbHasClass("bbb-quick-search-show"))
+          } else if (!BH.hasClass(searchDiv, "bbb-quick-search-show"))
             quickSearchOpen();
-          else searchDiv.bbbRemoveClass("bbb-quick-search-show");
+          else BH.removeClass(searchDiv, "bbb-quick-search-show");
         }
 
         event.preventDefault();
@@ -10819,7 +10974,7 @@ function main() {
       function (event) {
         if (
           event.button === 2 &&
-          searchDiv.bbbHasClass("bbb-quick-search-active")
+          BH.hasClass(searchDiv, "bbb-quick-search-active")
         )
           quickSearchReset();
 
@@ -10859,9 +11014,9 @@ function main() {
     document.body.insertBefore(searchDiv, document.body.firstElementChild);
 
     // Force the submit button to retain its width.
-    searchDiv.bbbAddClass("bbb-quick-search-show");
+    BH.addClass(searchDiv, "bbb-quick-search-show");
     searchSubmit.style.width = searchSubmit.offsetWidth + "px";
-    searchDiv.bbbRemoveClass("bbb-quick-search-show");
+    BH.removeClass(searchDiv, "bbb-quick-search-show");
 
     // Set up autocomplete.
     otherAutocomplete(searchInput);
@@ -10875,7 +11030,8 @@ function main() {
     if (pinnedSearch) {
       bbb.quick_search = pinnedSearch;
       searchInput.value = pinnedSearch.tags;
-      searchDiv.bbbAddClass(
+      BH.addClass(
+        searchDiv,
         "bbb-quick-search-pinned" +
           (pinnedSearch.negated ? " bbb-quick-search-negated" : ""),
       );
@@ -10891,20 +11047,21 @@ function main() {
     // Submit the quick search or reset it if the current search is active.
     var searchInput = bbb.el.quickSearchInput;
     var searchDiv = bbb.el.quickSearchDiv;
-    var oldValue = bbb.quick_search.tags.bbbSpaceClean();
+    var oldValue = BH.spaceClean(bbb.quick_search.tags);
     var oldNegate = bbb.quick_search.negated;
-    var curValue = searchInput.value.bbbSpaceClean();
-    var curNegate = searchDiv.bbbHasClass("bbb-quick-search-negated");
+    var curValue = BH.spaceClean(searchInput.value);
+    var curNegate = BH.hasClass(searchDiv, "bbb-quick-search-negated");
 
     if (curValue === "" || (curValue === oldValue && curNegate === oldNegate))
       quickSearchReset();
     else {
       bbb.quick_search.tags = searchInput.value;
-      bbb.quick_search.negated = searchDiv.bbbHasClass(
+      bbb.quick_search.negated = BH.hasClass(
+        searchDiv,
         "bbb-quick-search-negated",
       );
 
-      if (searchDiv.bbbHasClass("bbb-quick-search-pinned"))
+      if (BH.hasClass(searchDiv, "bbb-quick-search-pinned"))
         sessionStorage.bbbSetItem(
           "bbb_quick_search",
           JSON.stringify(bbb.quick_search),
@@ -10919,10 +11076,11 @@ function main() {
     // Check the input value and adjust the submit button appearance accordingly.
     var input = bbb.el.quickSearchInput;
     var submit = bbb.el.quickSearchSubmit;
-    var oldValue = bbb.quick_search.tags.bbbSpaceClean();
+    var oldValue = BH.spaceClean(bbb.quick_search.tags);
     var oldNegate = bbb.quick_search.negated;
-    var curValue = input.value.bbbSpaceClean();
-    var curNegate = bbb.el.quickSearchDiv.bbbHasClass(
+    var curValue = BH.spaceClean(input.value);
+    var curNegate = BH.hasClass(
+      bbb.el.quickSearchDiv,
       "bbb-quick-search-negated",
     );
 
@@ -10943,12 +11101,13 @@ function main() {
     bbb.el.quickSearchSubmit.value = "Go";
     bbb.el.quickSearchStatus.title = "";
     sessionStorage.removeItem("bbb_quick_search");
-    bbb.el.quickSearchDiv.bbbRemoveClass(
+    BH.removeClass(
+      bbb.el.quickSearchDiv,
       "bbb-quick-search-active bbb-quick-search-pinned bbb-quick-search-negated",
     );
 
     while (filteredPost) {
-      filteredPost.bbbRemoveClass("bbb-quick-search-filtered");
+      BH.removeClass(filteredPost, "bbb-quick-search-filtered");
       enablePostDDL(filteredPost);
       filteredPost = filteredPosts[0];
     }
@@ -10956,7 +11115,7 @@ function main() {
 
   function quickSearchTest(target) {
     // Test posts to see if they match the search.
-    var value = bbb.quick_search.tags.bbbSpaceClean();
+    var value = BH.spaceClean(bbb.quick_search.tags);
 
     if (value === "") return;
     else if (bbb.quick_search.negated) value = "-( " + value + " )";
@@ -10966,16 +11125,16 @@ function main() {
 
     bbb.el.quickSearchSubmit.value = "X";
     bbb.el.quickSearchStatus.title = value;
-    bbb.el.quickSearchDiv.bbbAddClass("bbb-quick-search-active");
+    BH.addClass(bbb.el.quickSearchDiv, "bbb-quick-search-active");
 
     for (var i = 0, il = posts.length; i < il; i++) {
       var post = posts[i];
 
       if (!thumbSearchMatch(post, search)) {
-        post.bbbAddClass("bbb-quick-search-filtered");
+        BH.addClass(post, "bbb-quick-search-filtered");
         disablePostDDL(post);
       } else {
-        post.bbbRemoveClass("bbb-quick-search-filtered");
+        BH.removeClass(post, "bbb-quick-search-filtered");
         enablePostDDL(post);
       }
     }
@@ -10989,11 +11148,11 @@ function main() {
     searchInput.value = bbb.quick_search.tags;
 
     if (bbb.quick_search.negated === true)
-      searchDiv.bbbAddClass("bbb-quick-search-negated");
-    else searchDiv.bbbRemoveClass("bbb-quick-search-negated");
+      BH.addClass(searchDiv, "bbb-quick-search-negated");
+    else BH.removeClass(searchDiv, "bbb-quick-search-negated");
 
     quickSearchCheck();
-    searchDiv.bbbAddClass("bbb-quick-search-show");
+    BH.addClass(searchDiv, "bbb-quick-search-show");
     searchInput.focus();
   }
 
@@ -11002,9 +11161,9 @@ function main() {
     var searchDiv = bbb.el.quickSearchDiv;
 
     if (
-      searchDiv.bbbHasClass("bbb-quick-search-show", "bbb-quick-search-active")
+      BH.hasClass(searchDiv, "bbb-quick-search-show", "bbb-quick-search-active")
     ) {
-      if (!searchDiv.bbbHasClass("bbb-quick-search-pinned"))
+      if (!BH.hasClass(searchDiv, "bbb-quick-search-pinned"))
         quickSearchPinEnable();
       else quickSearchPinDisable();
     }
@@ -11012,7 +11171,7 @@ function main() {
 
   function quickSearchPinEnable() {
     // Enable the quick search pin.
-    bbb.el.quickSearchDiv.bbbAddClass("bbb-quick-search-pinned");
+    BH.addClass(bbb.el.quickSearchDiv, "bbb-quick-search-pinned");
 
     if (bbb.quick_search.tags)
       sessionStorage.bbbSetItem(
@@ -11023,7 +11182,7 @@ function main() {
 
   function quickSearchPinDisable() {
     // Disable the quick search pin.
-    bbb.el.quickSearchDiv.bbbRemoveClass("bbb-quick-search-pinned");
+    BH.removeClass(bbb.el.quickSearchDiv, "bbb-quick-search-pinned");
     sessionStorage.removeItem("bbb_quick_search");
   }
 
@@ -11032,9 +11191,9 @@ function main() {
     var searchDiv = bbb.el.quickSearchDiv;
 
     if (
-      searchDiv.bbbHasClass("bbb-quick-search-show", "bbb-quick-search-active")
+      BH.hasClass(searchDiv, "bbb-quick-search-show", "bbb-quick-search-active")
     ) {
-      if (!searchDiv.bbbHasClass("bbb-quick-search-negated"))
+      if (!BH.hasClass(searchDiv, "bbb-quick-search-negated"))
         quickSearchNegateEnable();
       else quickSearchNegateDisable();
     }
@@ -11042,13 +11201,13 @@ function main() {
 
   function quickSearchNegateEnable() {
     // Enable the quick search negation.
-    bbb.el.quickSearchDiv.bbbAddClass("bbb-quick-search-negated");
+    BH.addClass(bbb.el.quickSearchDiv, "bbb-quick-search-negated");
     quickSearchCheck();
   }
 
   function quickSearchNegateDisable() {
     // Disable the quick search negation.
-    bbb.el.quickSearchDiv.bbbRemoveClass("bbb-quick-search-negated");
+    BH.removeClass(bbb.el.quickSearchDiv, "bbb-quick-search-negated");
     quickSearchCheck();
   }
 
@@ -11067,7 +11226,7 @@ function main() {
     var watchedNode = paginator ? paginator.parentNode : document.body;
 
     commentScore();
-    watchedNode.bbbWatchNodes(commentScore);
+    BH.watchNodes(watchedNode, commentScore);
   }
 
   function commentScore() {
@@ -11161,11 +11320,11 @@ function main() {
         var targetTag = target.tagName;
         var url; // If/else variable.
 
-        if (targetTag === "IMG" && target.bbbParent("A", 3))
-          url = target.bbbParent("A", 3).href;
+        if (targetTag === "IMG" && BH.parent(target, "A", 3))
+          url = BH.parent(target, "A", 3).href;
         else if (
           targetTag === "A" &&
-          target.bbbHasClass("bbb-post-link", "bbb-thumb-link")
+          BH.hasClass(target, "bbb-post-link", "bbb-thumb-link")
         )
           url = target.href;
 
@@ -11199,7 +11358,7 @@ function main() {
 
     // Resize the tip to minimize blank space.
     var origHeight = tip.clientHeight;
-    var padding = tip.bbbGetPadding();
+    var padding = BH.getPadding(tip);
     var paddingWidth = padding.width;
 
     while (origHeight >= tip.clientHeight && tip.clientWidth > 15)
@@ -11450,7 +11609,7 @@ function main() {
       for (var i = 0, il = posts.length; i < il; i++)
         postsObject.push(unformatInfo(posts[i].bbbInfo()));
 
-      var postsHash = String(JSON.stringify(postsObject).bbbHash());
+      var postsHash = String(BH.hash(JSON.stringify(postsObject)));
 
       state.bbb_posts_cache = { hash: postsHash, posts: postsObject };
       sessionStorage.bbbSetItem("bbb_posts_cache", postsHash); // Key used to detect if the page is reloaded/re-entered.
@@ -11507,14 +11666,14 @@ function main() {
     sidebar.addEventListener(
       "focus",
       function () {
-        sidebar.bbbAddClass("bbb-sidebar-show");
+        BH.addClass(sidebar, "bbb-sidebar-show");
       },
       true,
     );
     sidebar.addEventListener(
       "blur",
       function () {
-        sidebar.bbbRemoveClass("bbb-sidebar-show");
+        BH.removeClass(sidebar, "bbb-sidebar-show");
       },
       true,
     );
@@ -11553,7 +11712,7 @@ function main() {
     if (comments) comments.style.overflow = "auto"; // Force the contained float elements to affect the dimensions.
 
     fixedSidebarCheck();
-    document.body.bbbWatchNodes(fixedSidebarCheck);
+    BH.watchNodes(document.body, fixedSidebarCheck);
     document.addEventListener("keyup", fixedSidebarCheck, false);
     document.addEventListener("click", fixedSidebarCheck, false);
     window.addEventListener("scroll", fixedSidebarCheck, false);
@@ -11703,7 +11862,7 @@ function main() {
 
     bbb.fixed_paginator_space = docBottom - paginatorBottom - menuBottomAdjust; // Store the amount of space between the bottom of the page and the paginator.
 
-    document.body.bbbWatchNodes(fixedPaginatorCheck);
+    BH.watchNodes(document.body, fixedPaginatorCheck);
     document.addEventListener("keyup", fixedPaginatorCheck, false);
     document.addEventListener("click", fixedPaginatorCheck, false);
     window.addEventListener("scroll", fixedPaginatorCheck, false);
@@ -11731,8 +11890,8 @@ function main() {
       ((runEndless && bbb.endless.enabled) ||
         (runNormal && !bbb.endless.enabled))
     )
-      document.body.bbbAddClass("bbb-fixed-paginator");
-    else document.body.bbbRemoveClass("bbb-fixed-paginator");
+      BH.addClass(document.body, "bbb-fixed-paginator");
+    else BH.removeClass(document.body, "bbb-fixed-paginator");
   }
 
   function collapseSidebar() {
@@ -11751,7 +11910,7 @@ function main() {
     // Grab the desired tags and turn them into toggle elements for their section.
     for (i = 0, il = headers.length; i < il; i++) {
       var header = headers[i];
-      var name = header.textContent.bbbSpaceClean().replace(" ", "_");
+      var name = BH.spaceClean(header.textContent).replace(" ", "_");
       var collapse = data[name];
       var sibling = header.nextElementSibling;
       nameList += name + " ";
@@ -11764,12 +11923,12 @@ function main() {
       );
       header.addEventListener("contextmenu", disableEvent, false);
 
-      if (collapse && sibling) sibling.bbbAddClass("bbb-collapsed-sidebar");
+      if (collapse && sibling) BH.addClass(sibling, "bbb-collapsed-sidebar");
     }
 
     // Clean up potential old section names.
     for (i in data) {
-      if (data.hasOwnProperty(i) && nameList.indexOf(i.bbbSpacePad()) < 0) {
+      if (data.hasOwnProperty(i) && nameList.indexOf(BH.spacePad(i)) < 0) {
         removedOld = true;
         delete data[i];
       }
@@ -11789,9 +11948,9 @@ function main() {
 
     if (event.button !== 0 || !sibling) return;
 
-    if (sibling.bbbHasClass("bbb-collapsed-sidebar"))
-      sibling.bbbRemoveClass("bbb-collapsed-sidebar");
-    else sibling.bbbAddClass("bbb-collapsed-sidebar");
+    if (BH.hasClass(sibling, "bbb-collapsed-sidebar"))
+      BH.removeClass(sibling, "bbb-collapsed-sidebar");
+    else BH.addClass(sibling, "bbb-collapsed-sidebar");
 
     event.preventDefault();
   }
@@ -12286,7 +12445,7 @@ function main() {
     var i, il; // Loop variables.
 
     if (oldValue !== value) {
-      var tags = value.toLowerCase().bbbSpaceClean().split(/\s+/);
+      var tags = BH.spaceClean(value.toLowerCase()).split(/\s+/);
       var activeLinks = bbb.search_add.active_links;
 
       for (i in activeLinks) {
@@ -12354,32 +12513,32 @@ function main() {
         link.innerHTML = "+";
 
         if (tagRegEx.test(inputValue))
-          input.value = inputValue.replace(tagRegEx, tag).bbbSpaceClean();
-        else input.value = (inputValue + " " + tag).bbbSpaceClean();
+          input.value = BH.spaceClean(inputValue.replace(tagRegEx, tag));
+        else input.value = BH.spaceClean(inputValue + " " + tag);
         break;
       case "+": // Tag currently included.
         link.innerHTML = "&ndash;";
 
         if (tagRegEx.test(inputValue))
-          input.value = inputValue
-            .replace(tagRegEx, "$1-" + tag)
-            .bbbSpaceClean();
-        else input.value = (inputValue + " -" + tag).bbbSpaceClean();
+          input.value = BH.spaceClean(
+            inputValue.replace(tagRegEx, "$1-" + tag),
+          );
+        else input.value = BH.spaceClean(inputValue + " -" + tag);
         break;
       case enDash: // Tag currently excluded.
         link.innerHTML = "~";
 
         if (tagRegEx.test(inputValue))
-          input.value = inputValue
-            .replace(tagRegEx, "$1~" + tag)
-            .bbbSpaceClean();
-        else input.value = (inputValue + " ~" + tag).bbbSpaceClean();
+          input.value = BH.spaceClean(
+            inputValue.replace(tagRegEx, "$1~" + tag),
+          );
+        else input.value = BH.spaceClean(inputValue + " ~" + tag);
         break;
       case "~": // Tag currently included with other tags.
         link.innerHTML = angleQuotes;
 
         if (tagRegEx.test(inputValue))
-          input.value = inputValue.replace(tagRegEx, "$1").bbbSpaceClean();
+          input.value = BH.spaceClean(inputValue.replace(tagRegEx, "$1"));
         break;
     }
 
@@ -12853,7 +13012,7 @@ function main() {
     // Check if the tag from a search string is a metatag.
     if (tag.indexOf(":") < 0) return false;
     else {
-      var tagName = tag.split(":", 1)[0].bbbSpaceClean();
+      var tagName = BH.spaceClean(tag.split(":", 1)[0]);
 
       if (
         tagName === "pool" ||
