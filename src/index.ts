@@ -4671,7 +4671,7 @@ function main() {
 
   function loadSettings() {
     // Load stored settings.
-    var settings = loadData("bbb_settings");
+    var settings = GM_getValue("bbb_settings", null);
 
     if (settings === null) {
       // Settings not found in the expected place.
