@@ -54,6 +54,7 @@ export function showDialog(content: DialogContent, config: DialogConfig = {}) {
     } else {
       el.appendChild(content);
     }
+    el.removeAttribute(`data-content`);
   });
 
   // Add event listeners for stuff
