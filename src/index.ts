@@ -1,3 +1,5 @@
+import { Settings } from "./settings";
+
 const BH = {
   /** Add a leading and trailing space. */
   spacePad(x: string) {
@@ -4909,7 +4911,7 @@ function main() {
               0,
             );
 
-          deleteData("bbb_thumb_cache");
+          GM_deleteValue("bbb_thumb_cache");
         case "8.0":
         case "8.0.1":
         case "8.0.2":
@@ -4934,32 +4936,6 @@ function main() {
     for (var i in user) {
       if (user.hasOwnProperty(i) && typeof bbb.options[i] === "undefined")
         delete user[i];
-    }
-  }
-
-  function eraseSettings() {
-    // Try to erase everything.
-    var gmList = listData();
-    var cookies = getCookie();
-    var i, il, keyName; // Loop variables.
-
-    for (i = 0, il = gmList.length; i < il; i++) deleteData(gmList[i]);
-
-    for (i = localStorage.length - 1; i >= 0; i--) {
-      keyName = localStorage.key(i);
-
-      if (keyName.indexOf("bbb_") === 0) localStorage.removeItem(keyName);
-    }
-
-    for (i = sessionStorage.length - 1; i >= 0; i--) {
-      keyName = sessionStorage.key(i);
-
-      if (keyName.indexOf("bbb_") === 0) sessionStorage.removeItem(keyName);
-    }
-
-    for (i in cookies) {
-      if (cookies.hasOwnProperty(i) && i.indexOf("bbb_") === 0)
-        createCookie(i, 0, -1);
     }
   }
 
@@ -12406,14 +12382,14 @@ function main() {
       {
         text: "Settings",
         func: function () {
-          deleteData("bbb_settings");
+          Settings.erase();
           removeMenu();
         },
       },
       {
         text: "All Information",
         func: function () {
-          eraseSettings();
+          Settings.eraseAll();
           removeMenu();
           location.reload();
         },
@@ -12739,14 +12715,6 @@ function main() {
 
   function saveData(key: string, value: any) {
     return GM_setValue(key, value);
-  }
-
-  function deleteData(key: string) {
-    GM_deleteValue(key);
-  }
-
-  function listData() {
-    return GM_listValues();
   }
 
   function sendCustomEvent(type, detail) {
