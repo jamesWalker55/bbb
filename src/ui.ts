@@ -93,10 +93,11 @@ export function showDialog(content: DialogContent, config: DialogConfig = {}) {
   });
 
   // Add dialog to page
-  document.body.appendChild(root.children[0]);
+  const dialog = root.children[0];
+  document.body.appendChild(dialog);
 
   // Focus on the dialog
-  const windowDiv = root.querySelector(`#bbb-dialog-window`);
+  const windowDiv = dialog.querySelector(`#bbb-dialog-window`);
   if (windowDiv === null)
     throw new Error("failed to find '#bbb-dialog-window' in dialog window");
 
