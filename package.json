@@ -3,9 +3,15 @@
   "module": "src/index.ts",
   "type": "module",
   "devDependencies": {
-    "@types/bun": "latest"
+    "@types/bun": "latest",
+    "@types/ejs": "^3.1.5",
+    "@types/js-cookie": "^3.0.6"
   },
   "peerDependencies": {
     "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "ejs": "^3.1.10",
+    "js-cookie": "^3.0.5"
   }
 }
