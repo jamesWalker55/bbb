@@ -1390,50 +1390,80 @@ function main() {
 
   /* Functions */
 
+  enum FetchMode {
+    child = "child",
+    comments = "comments",
+    endless = "endless",
+    endless_favorite_group_search = "endless_favorite_group_search",
+    endless_pool_search = "endless_pool_search",
+    favorite_group = "favorite_group",
+    favorite_group_cache = "favorite_group_cache",
+    favorite_group_search = "favorite_group_search",
+    favorites = "favorites",
+    parent = "parent",
+    pool = "pool",
+    pool_cache = "pool_cache",
+    pool_search = "pool_search",
+    popular = "popular",
+    popular_view = "popular_view",
+    search = "search",
+  }
+
   /* Functions for XML API info */
-  function searchJSON(mode, optArg) {
+  function searchJSON(mode: FetchMode, optArg) {
     // Figure out the desired URL for a JSON API request, trigger any necessary xml flag, and update the status message.
     var url = location.href.split("#", 1)[0];
     var idCache, idList, idSearch, page; // If/else variables.
 
-    if (mode === "search" || mode === "favorites") {
+    if (mode === FetchMode.search || mode === FetchMode.favorites) {
       url = allowUserLimit()
         ? updateURLQuery(url, { limit: thumbnail_count })
         : url;
       bbb.flags.thumbs_xml = true;
 
-      if (mode === "search")
+      if (mode === FetchMode.search)
         fetchJSON(
           url.replace(/\/?(?:posts)?\/?(?:\?|$)/, "/posts.json?"),
-          "search",
+          FetchMode.search,
         );
-      else if (mode === "favorites")
+      else if (mode === FetchMode.favorites)
         fetchJSON(
           url.replace(/\/favorites\/?(?:\?|$)/, "/favorites.json?"),
-          "favorites",
+          FetchMode.favorites,
         );
 
       bbbStatus("posts", "new");
-    } else if (mode === "popular" || mode === "popular_view") {
+    } else if (mode === FetchMode.popular || mode === FetchMode.popular_view) {
       bbb.flags.thumbs_xml = true;
 
       fetchJSON(url.replace(/\/(popular_view|popular)\/?/, "/$1.json"), mode);
       bbbStatus("posts", "new");
-    } else if (mode === "pool" || mode === "favorite_group") {
+    } else if (mode === FetchMode.pool || mode === FetchMode.favorite_group) {
       idCache = getIdCache();
       bbb.flags.thumbs_xml = true;
 
-      if (idCache) searchJSON(mode + "_search", { post_ids: idCache });
+      if (idCache)
+        searchJSON(
+          mode === FetchMode.pool
+            ? FetchMode.pool_search
+            : FetchMode.favorite_group_search,
+          { post_ids: idCache },
+        );
       // Get a new cache.
       else
         fetchJSON(
           url.replace(/\/(pools|favorite_groups)\/(\d+)/, "/$1/$2.json"),
-          mode + "_cache",
-          mode + "_search",
+          mode === FetchMode.pool
+            ? FetchMode.pool_cache
+            : FetchMode.favorite_group_cache,
+          mode + "_search", // TODO: wtf is this?
         );
 
       bbbStatus("posts", "new");
-    } else if (mode === "pool_search" || mode === "favorite_group_search") {
+    } else if (
+      mode === FetchMode.pool_search ||
+      mode === FetchMode.favorite_group_search
+    ) {
       page = Number(getVar("page")) || 1;
       idList = optArg.post_ids.split(" ");
       idSearch = idList.slice(
@@ -1446,7 +1476,7 @@ function main() {
         mode,
         idSearch,
       );
-    } else if (mode === "endless") {
+    } else if (mode === FetchMode.endless) {
       bbb.flags.endless_xml = true;
 
       if (gLoc === "pool" || gLoc === "favorite_group") {
@@ -1464,13 +1494,13 @@ function main() {
       } else {
         url = endlessNexURL();
 
-        fetchJSON(url.replace(/(\?)|$/, ".json$1"), "endless");
+        fetchJSON(url.replace(/(\?)|$/, ".json$1"), FetchMode.endless);
       }
 
       bbbStatus("posts", "new");
     } else if (
-      mode === "endless_pool_search" ||
-      mode === "endless_favorite_group_search"
+      mode === FetchMode.endless_pool_search ||
+      mode === FetchMode.endless_favorite_group_search
     ) {
       idList = optArg.post_ids.split(" ");
       page = Number(getVar("page", endlessNexURL())); // If a pool gets over 1000 pages, I have no idea what happens for regular users. Biggest pool is currently around 400 pages so we won't worry about that for the time being.
@@ -1481,13 +1511,16 @@ function main() {
 
       fetchJSON(
         "/posts.json?tags=status:any+id:" + idSearch.join(","),
-        "endless",
+        FetchMode.endless,
         idSearch,
       );
-    } else if (mode === "comments") {
-      fetchJSON(url.replace(/\/comments\/?/, "/comments.json"), "comments");
+    } else if (mode === FetchMode.comments) {
+      fetchJSON(
+        url.replace(/\/comments\/?/, "/comments.json"),
+        FetchMode.comments,
+      );
       bbbStatus("posts", "new");
-    } else if (mode === "parent" || mode === "child") {
+    } else if (mode === FetchMode.parent || mode === FetchMode.child) {
       var parentUrl = "/posts.json?limit=200&tags=status:any+parent:" + optArg;
 
       fetchJSON(parentUrl, mode, optArg);
@@ -1495,7 +1528,7 @@ function main() {
     }
   }
 
-  function fetchJSON(url, mode, optArg, session, retries) {
+  function fetchJSON(url: string, mode: FetchMode, optArg, session, retries) {
     // Retrieve JSON.
     var xmlhttp = new XMLHttpRequest();
     var xmlRetries = retries || 0;
@@ -1514,19 +1547,19 @@ function main() {
 
             // Update status message.
             if (
-              mode === "search" ||
-              mode === "popular" ||
-              mode === "popular_view" ||
-              mode === "favorites" ||
-              mode === "pool_search" ||
-              mode === "favorite_group_search"
+              mode === FetchMode.search ||
+              mode === FetchMode.popular ||
+              mode === FetchMode.popular_view ||
+              mode === FetchMode.favorites ||
+              mode === FetchMode.pool_search ||
+              mode === FetchMode.favorite_group_search
             ) {
               bbb.flags.thumbs_xml = false;
 
               parseListing(formatInfoArray(xml), optArg);
             } else if (
-              mode === "pool_cache" ||
-              mode === "favorite_group_cache"
+              mode === FetchMode.pool_cache ||
+              mode === FetchMode.favorite_group_cache
             ) {
               var collId = location.href.match(
                 /\/(?:pools|favorite_groups)\/(\d+)/,
@@ -1537,15 +1570,19 @@ function main() {
                 new Date().getTime() + " " + xml.post_ids,
               );
               searchJSON(optArg, xml);
-            } else if (mode === "endless") {
+            } else if (mode === FetchMode.endless) {
               bbb.flags.endless_xml = false;
 
               endlessXMLJSONHandler(formatInfoArray(xml), optArg);
-            } else if (mode === "comments") parseComments(formatInfoArray(xml));
-            else if (mode === "parent" || mode === "child")
+            } else if (mode === FetchMode.comments)
+              parseComments(formatInfoArray(xml));
+            else if (mode === FetchMode.parent || mode === FetchMode.child)
               parseRelations(formatInfoArray(xml), mode, optArg);
 
-            if (mode !== "pool_cache" && mode !== "favorite_group_cache")
+            if (
+              mode !== FetchMode.pool_cache &&
+              mode !== FetchMode.favorite_group_cache
+            )
               bbbStatus("posts", "done");
           } else {
             if (xmlhttp.status === 403 || xmlhttp.status === 401) {
