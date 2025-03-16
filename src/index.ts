@@ -203,7 +203,7 @@ function main() {
     else return scrapePost(document);
   };
 
-  Storage.prototype.bbbSetItem = function (key, value) {
+  Storage.prototype.bbbSetItem = function (key: string, value: string) {
     // Store a value in storage and warn if it is full.
     try {
       this.setItem(key, value);
@@ -211,6 +211,7 @@ function main() {
       if (error.code === 22 || error.code === 1014) {
         if (this === localStorage) {
           if (!bbb.flags.local_storage_full) {
+            // not full flag
             if (localStorage.length > 2000) {
               // Try clearing out autocomplete if that appears to be the problem.
               cleanLocalStorage("autocomplete");
@@ -220,7 +221,9 @@ function main() {
               } catch (localError) {
                 bbb.flags.local_storage_full = true;
               }
-            } else bbb.flags.local_storage_full = true;
+            } else {
+              bbb.flags.local_storage_full = true;
+            }
 
             // Store the local storage value until it can be retried.
             if (bbb.flags.local_storage_full) {
@@ -229,6 +232,7 @@ function main() {
               localStorageDialog();
             }
           } else {
+            // is full
             // Temporarily store additional local storage values until they can be retried.
             if (sessionStorage.getItem("bbb_local_storage_queue")) {
               var sessLocal = parseJson(
@@ -241,7 +245,9 @@ function main() {
                 "bbb_local_storage_queue",
                 JSON.stringify(sessLocal),
               );
-            } else bbb.local_storage_queue[key] = value;
+            } else {
+              bbb.local_storage_queue[key] = value;
+            }
           }
         } else {
           // Keep only a few values in session storage.
