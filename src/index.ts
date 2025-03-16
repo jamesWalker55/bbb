@@ -2618,7 +2618,8 @@ function main() {
     // Take thumbnails from a page and pass them to the queue or retrieve hidden posts as necessary.
     bbb.endless.new_paginator = getPaginator(docEl);
 
-    if (useAPI() && potentialHiddenPosts(gLoc, docEl)) searchJSON("endless");
+    if (useAPI() && potentialHiddenPosts(gLoc, docEl))
+      searchJSON(FetchMode.endless);
     else {
       var posts = getPosts(docEl);
       var newPage = document.createElement("div");
@@ -5898,7 +5899,7 @@ function main() {
     }
 
     if (fixParent) {
-      if (showPreview || !parentLink) searchJSON("parent", postInfo.id);
+      if (showPreview || !parentLink) searchJSON(FetchMode.parent, postInfo.id);
       else parentLink.addEventListener("click", requestRelations, false);
     }
 
@@ -5922,7 +5923,8 @@ function main() {
     }
 
     if (fixChild) {
-      if (showPreview || !childLink) searchJSON("child", postInfo.parent_id);
+      if (showPreview || !childLink)
+        searchJSON(FetchMode.child, postInfo.parent_id);
       else childLink.addEventListener("click", requestRelations, false);
     }
   }
@@ -5935,9 +5937,9 @@ function main() {
     var target = event.target;
 
     if (target.id === "has-children-relationship-preview-link")
-      searchJSON("parent", postInfo.id);
+      searchJSON(FetchMode.parent, postInfo.id);
     else if (target.id === "has-parent-relationship-preview-link")
-      searchJSON("child", postInfo.parent_id);
+      searchJSON(FetchMode.child, postInfo.parent_id);
 
     target.removeEventListener("click", requestRelations, false);
     event.preventDefault();
