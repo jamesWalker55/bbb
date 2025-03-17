@@ -1,6 +1,51 @@
 import ejs from "ejs";
 import TEMPLATE_UI_DIALOG from "./uiDialog.html" with { type: "text" };
 
+function takeElement<T extends `data-${string}`>(
+  root: Element,
+  attr: T,
+): Element {
+  const el = root.querySelector(`[${attr}]`);
+  if (!el)
+    throw new Error(`Failed to retrieve element [${attr}] from template`);
+
+  el.removeAttribute(attr);
+
+  return el;
+}
+
+function tryTakeElement<T extends `data-${string}`>(
+  root: Element,
+  attr: T,
+): Element | null {
+  const el = root.querySelector(`[${attr}]`);
+  if (!el) return null;
+
+  el.removeAttribute(attr);
+
+  return el;
+}
+
+function takeElements<T extends `data-${string}`>(root: Element, attr: T) {
+  // this NodeList is static
+  // https://developer.mozilla.org/en-US/docs/Web/API/Document/querySelectorAll
+  const els = root.querySelectorAll(`[${attr}]`);
+  els.forEach((x) => x.removeAttribute(attr));
+  return Array.from(els);
+}
+
+function assertAllElementsTaken(root: Element) {
+  root.querySelectorAll(`*`).forEach((el) => {
+    for (const attr of Array.from(el.attributes)) {
+      if (attr.name.startsWith("data-")) {
+        throw new Error(
+          `Template contains unused 'data' attribute: ${attr.name}`,
+        );
+      }
+    }
+  });
+}
+
 const templateUiDialog = ejs.compile(TEMPLATE_UI_DIALOG);
 
 type DialogContent = string | Element | DocumentFragment;
@@ -48,61 +93,61 @@ export function showDialog(content: DialogContent, config: DialogConfig = {}) {
   root.innerHTML = templateUiDialog({ showOk, showCancel });
 
   // Insert content into the window
-  root.querySelectorAll(`[data-content]`).forEach((el) => {
-    if (typeof content === "string") {
-      el.innerHTML = content;
-    } else {
-      el.appendChild(content);
-    }
-    el.removeAttribute(`data-content`);
-  });
+  const contentWrapper = takeElement(root, "data-content");
+  if (typeof content === "string") {
+    contentWrapper.innerHTML = content;
+  } else {
+    contentWrapper.appendChild(content);
+  }
 
   // Add event listeners for stuff
-  Array.from(root.querySelectorAll(`[data-listener-buttons]`)).forEach((el) => {
-    // Only allow left clicks to trigger the prompt buttons.
-    el.addEventListener(
-      "click",
-      (_e) => {
-        const e = _e as MouseEvent;
-        if (e.button !== 0) {
-          e.stopPropagation();
-        }
-      },
-      false,
-    );
-    el.removeAttribute(`data-listener-buttons`);
-  });
+  const buttonsContainer = takeElement(root, "data-listener-buttons");
+  buttonsContainer.addEventListener(
+    "click",
+    (_e) => {
+      // Only allow left clicks to trigger the prompt buttons.
+      const e = _e as MouseEvent;
+      if (e.button !== 0) {
+        e.stopPropagation();
+      }
+    },
+    false,
+  );
 
-  let okButton = null;
-  Array.from(root.querySelectorAll(`[data-listener-ok]`)).forEach((el) => {
-    okButton = el;
+  const okButton = tryTakeElement(root, "data-listener-ok");
+  if (okButton) {
     if (typeof config.ok === "function") {
-      el.addEventListener("click", config.ok as (e: Event) => void, false);
+      okButton.addEventListener(
+        "click",
+        config.ok as (e: Event) => void,
+        false,
+      );
     }
-    el.addEventListener("click", onCloseDialog, false);
-    el.removeAttribute(`data-listener-ok`);
-  });
+    okButton.addEventListener("click", onCloseDialog, false);
+  }
 
-  let cancelButton = null;
-  Array.from(root.querySelectorAll(`[data-listener-cancel]`)).forEach((el) => {
-    cancelButton = el;
+  const cancelButton = tryTakeElement(root, "data-listener-cancel");
+  if (cancelButton) {
     if (typeof config.cancel === "function") {
-      el.addEventListener("click", config.cancel as (e: Event) => void, false);
+      cancelButton.addEventListener(
+        "click",
+        config.cancel as (e: Event) => void,
+        false,
+      );
     }
-    el.addEventListener("click", onCloseDialog, false);
-    el.removeAttribute(`data-listener-cancel`);
-  });
+    cancelButton.addEventListener("click", onCloseDialog, false);
+  }
 
   // Add dialog to page
   const dialog = root.children[0];
   document.body.appendChild(dialog);
 
   // Focus on the dialog
-  const windowDiv = dialog.querySelector(`#bbb-dialog-window`);
-  if (windowDiv === null)
-    throw new Error("failed to find '#bbb-dialog-window' in dialog window");
-
+  const windowDiv = takeElement(dialog, "data-dialog-window");
   ((okButton || cancelButton || windowDiv) as HTMLElement).focus();
+
+  // Sanity check
+  assertAllElementsTaken(dialog);
 }
 
 function onCloseDialog(event: Event) {
