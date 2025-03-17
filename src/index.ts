@@ -1,3 +1,4 @@
+import { SECTION, DanbooruSection } from "./globals";
 import { Settings } from "./settings";
 import { showDialog } from "./ui";
 
@@ -1225,8 +1226,7 @@ function main() {
   loadSettings(); // Load user settings.
 
   // Location variables.
-  var gLoc = danbLoc(); // Current location
-  var gLocRegex = new RegExp("\\b" + gLoc + "\\b");
+  var gLocRegex = new RegExp(`\\b${SECTION}\\b`);
 
   // Script variables.
   // Global
@@ -1235,7 +1235,8 @@ function main() {
   var show_toddlercon = isGoldLevel() ? true : bbb.user.show_toddlercon;
   var show_banned = isGoldLevel() ? true : bbb.user.show_banned;
   var deleted_shown =
-    gLoc === "search" && /^(?:any|deleted)$/i.test(getTagVar("status")); // Check whether deleted posts are shown by default.
+    SECTION === DanbooruSection.search &&
+    /^(?:any|deleted)$/i.test(getTagVar("status")); // Check whether deleted posts are shown by default.
   var show_deleted = deleted_shown || bbb.user.show_deleted;
   var direct_downloads = bbb.user.direct_downloads;
   var post_link_new_window = bbb.user.post_link_new_window;
@@ -1489,17 +1490,20 @@ function main() {
     } else if (mode === FetchMode.endless) {
       bbb.flags.endless_xml = true;
 
-      if (gLoc === "pool" || gLoc === "favorite_group") {
+      if (
+        SECTION === DanbooruSection.pool ||
+        SECTION === DanbooruSection.favorite_group
+      ) {
         idCache = getIdCache();
 
         if (idCache)
-          searchJSON("endless_" + gLoc + "_search", { post_ids: idCache });
+          searchJSON(`endless_${SECTION}_search`, { post_ids: idCache });
         // Get a new cache.
         else
           fetchJSON(
             url.replace(/\/(pools|favorite_groups)\/(\d+)/, "/$1/$2.json"),
-            gLoc + "_cache",
-            "endless_" + gLoc + "_search",
+            `${SECTION}_cache`,
+            `endless_${SECTION}_search`,
           );
       } else {
         url = endlessNexURL();
@@ -1668,7 +1672,10 @@ function main() {
     // Use JSON results for thumbnail listings.
     var posts = xml;
     var orderedIds =
-      gLoc === "pool" || gLoc === "favorite_group" ? optArg : undefined;
+      SECTION === DanbooruSection.pool ||
+      SECTION === DanbooruSection.favorite_group
+        ? optArg
+        : undefined;
 
     if (!posts[0]) return;
 
@@ -2628,7 +2635,7 @@ function main() {
     // Take thumbnails from a page and pass them to the queue or retrieve hidden posts as necessary.
     bbb.endless.new_paginator = getPaginator(docEl);
 
-    if (useAPI() && potentialHiddenPosts(gLoc, docEl))
+    if (useAPI() && potentialHiddenPosts(SECTION, docEl))
       searchJSON(FetchMode.endless);
     else {
       var posts = getPosts(docEl);
@@ -2892,20 +2899,28 @@ function main() {
     else return target;
   }
 
-  function getThumbContainer(mode, docEl) {
+  function getThumbContainer(mode: DanbooruSection, docEl) {
     // Retrieve the element that contains the thumbnails.
     var target = docEl || document;
     var container; // If/else variable.
 
-    if (mode === "search") container = getId("posts-container", target);
-    else if (mode === "popular" || mode === "popular_view")
+    if (mode === DanbooruSection.search)
+      container = getId("posts-container", target);
+    else if (
+      mode === DanbooruSection.popular ||
+      mode === DanbooruSection.popular_view
+    )
       container = getId("a-popular", target);
-    else if (mode === "pool" || mode === "favorite_group") {
+    else if (
+      mode === DanbooruSection.pool ||
+      mode === DanbooruSection.favorite_group
+    ) {
       container = getId("a-show", target);
       container = container
         ? container.getElementsByTagName("section")[1]
         : undefined;
-    } else if (mode === "favorites") container = getId("posts", target);
+    } else if (mode === DanbooruSection.favorites)
+      container = getId("posts", target);
 
     // Can't always depend on the first post so it's used as a fallback.
     if (!container) {
@@ -2917,7 +2932,7 @@ function main() {
     return container;
   }
 
-  function getThumbSibling(mode, docEl) {
+  function getThumbSibling(mode: DanbooruSection, docEl) {
     // If it exists, retrieve the element that thumbnails should be added before.
     var target = docEl || document;
     var sibling; // If/else variable.
@@ -2944,9 +2959,9 @@ function main() {
         }
       }
     } else if (
-      mode === "pool" ||
-      mode === "favorites" ||
-      mode === "favorite_group"
+      mode === DanbooruSection.pool ||
+      mode === DanbooruSection.favorites ||
+      mode === DanbooruSection.favorite_group
     ) {
       var paginator = getPaginator(target);
       var endlessDiv = getId("bbb-endless-button-div", target);
@@ -3036,12 +3051,15 @@ function main() {
     // Return the thumbnail URL query value.
     var query = "";
 
-    if (gLoc === "search" || gLoc === "favorites") {
+    if (
+      SECTION === DanbooruSection.search ||
+      SECTION === DanbooruSection.favorites
+    ) {
       query = getCurTags();
-      query = query ? "?tags=" + query : "";
-    } else if (gLoc === "pool")
+      query = query ? `?tags=${query}` : "";
+    } else if (SECTION === DanbooruSection.pool)
       query = "?pool_id=" + location.pathname.match(/\/pools\/(\d+)/)[1];
-    else if (gLoc === "favorite_group")
+    else if (SECTION === DanbooruSection.favorite_group)
       query =
         "?favgroup_id=" +
         location.pathname.match(/\/favorite_groups\/(\d+)/)[1];
@@ -3053,8 +3071,8 @@ function main() {
     // Retrieve the current search tags for URL use.
     var tags; // If/else variable.
 
-    if (gLoc === "search") tags = getVar("tags") || "";
-    else if (gLoc === "favorites") {
+    if (SECTION === DanbooruSection.search) tags = getVar("tags") || "";
+    else if (SECTION === DanbooruSection.favorites) {
       tags = document.getElementById("tags");
       tags = tags
         ? BH.spaceClean(tags.getAttribute("value").replace("fav:", "ordfav:"))
@@ -5414,7 +5432,12 @@ function main() {
       document.getElementById("add-notes-list") ||
       document.getElementById("add-artist-commentary-list");
 
-    if (!optionListItem || !add_random_post_link || gLoc !== "post") return;
+    if (
+      !optionListItem ||
+      !add_random_post_link ||
+      SECTION !== DanbooruSection.post
+    )
+      return;
 
     // Create the link.
     var searchTags = getVar("tags");
@@ -5933,7 +5956,8 @@ function main() {
     // Remove the "copyright", "characters", and "artist" headers in the post sidebar.
     var tagList = document.getElementById("tag-list");
 
-    if (!tagList || !remove_tag_headers || gLoc !== "post") return;
+    if (!tagList || !remove_tag_headers || SECTION !== DanbooruSection.post)
+      return;
 
     var tagHolder = document.createDocumentFragment();
     var childIndex = 0;
@@ -5969,7 +5993,7 @@ function main() {
 
   function postTagTitles() {
     // Replace the post title with the full set of tags.
-    if (post_tag_titles && gLoc === "post")
+    if (post_tag_titles && SECTION === DanbooruSection.post)
       document.title =
         document.bbbInfo("tags").replace(/\s/g, ", ").replace(/_/g, " ") +
         " - Danbooru";
@@ -5977,7 +6001,7 @@ function main() {
 
   function minimizeStatusNotices() {
     // Show status notices only when their respective status link is clicked in the sidebar.
-    if (!minimize_status_notices || gLoc !== "post") return;
+    if (!minimize_status_notices || SECTION !== DanbooruSection.post) return;
 
     var infoSection = document.getElementById("post-information");
     var infoListItems = infoSection
@@ -6620,8 +6644,8 @@ function main() {
 
   function updateThumbListing(thumbs) {
     // Take a collection of thumbnails and use them to update the original thumbnail listing as appropriate.
-    var thumbContainer = getThumbContainer(gLoc);
-    var before = getThumbSibling(gLoc);
+    var thumbContainer = getThumbContainer(SECTION);
+    var before = getThumbSibling(SECTION);
     var newContainer; // If/else variable.
 
     if (!thumbContainer) {
@@ -6707,7 +6731,7 @@ function main() {
   function getIdCache() {
     // Retrieve the cached list of post IDs used for the pool/favorite group thumbnails.
     var collId = location.href.match(/\/(?:pools|favorite_groups)\/(\d+)/)[1];
-    var idCache = sessionStorage.getItem("bbb_" + gLoc + "_cache_" + collId);
+    var idCache = sessionStorage.getItem(`bbb_${SECTION}_cache_${collId}`);
     var curTime = new Date().getTime();
     var cacheTime, timeDiff; // If/else variables.
 
@@ -6736,7 +6760,7 @@ function main() {
       var postInfo = post.bbbInfo();
       var tooShort = (150 / postInfo.image_width) * postInfo.image_height < 30; // Short thumbnails will need the info div position adjusted.
 
-      if (gLoc === "comments") {
+      if (SECTION === DanbooruSection.comments) {
         // Add favorites info to the existing info in the comments listing.
         var firstInfo = post.getElementsByClassName("info")[0];
         var infoParent = firstInfo ? firstInfo.parentNode : undefined;
@@ -6787,12 +6811,12 @@ function main() {
     // Add direct downloads to thumbnails.
     if (
       !direct_downloads ||
-      (gLoc !== "search" &&
-        gLoc !== "pool" &&
-        gLoc !== "popular" &&
-        gLoc !== "popular_view" &&
-        gLoc !== "favorites" &&
-        gLoc !== "favorite_group")
+      (SECTION !== DanbooruSection.search &&
+        SECTION !== DanbooruSection.pool &&
+        SECTION !== DanbooruSection.popular &&
+        SECTION !== DanbooruSection.popular_view &&
+        SECTION !== DanbooruSection.favorites &&
+        SECTION !== DanbooruSection.favorite_group)
     )
       return;
 
@@ -6862,16 +6886,22 @@ function main() {
     var targetContainer; // If/else variable.
 
     if (target) targetContainer = target;
-    else if (gLoc === "post")
+    else if (SECTION === DanbooruSection.post)
       targetContainer = document.getElementById("content");
-    else if (gLoc === "pool" || gLoc === "favorite_group") {
+    else if (
+      SECTION === DanbooruSection.pool ||
+      SECTION === DanbooruSection.favorite_group
+    ) {
       targetContainer = document.getElementById("a-show");
       targetContainer = targetContainer
         ? targetContainer.getElementsByTagName("section")[0]
         : undefined;
-    } else if (gLoc === "search" || gLoc === "favorites")
+    } else if (
+      SECTION === DanbooruSection.search ||
+      SECTION === DanbooruSection.favorites
+    )
       targetContainer = document.getElementById("posts");
-    else if (gLoc === "intro")
+    else if (SECTION === DanbooruSection.intro)
       targetContainer = document.getElementById("a-intro");
 
     if (targetContainer) {
@@ -6926,26 +6956,26 @@ function main() {
       links[i].addEventListener("click", menuHandler, false);
   }
 
-  function potentialHiddenPosts(mode, target) {
+  function potentialHiddenPosts(mode: DanbooruSection, target) {
     // Check a normal thumbnail listing for possible hidden posts.
     var numPosts = getPosts(target).length;
     var noResults = noResultsPage(target);
     var limit = getLimit();
 
-    if (mode === "search" || mode === "favorites") {
+    if (mode === DanbooruSection.search || mode === DanbooruSection.favorites) {
       var numExpected = limit !== undefined ? limit : thumbnail_count_default;
       var numDesired = allowUserLimit() ? thumbnail_count : numExpected;
 
       if (!noResults && (numPosts !== numDesired || numPosts < numExpected))
         return true;
     } else if (
-      mode === "popular" ||
-      mode === "pool" ||
-      mode === "favorite_group" ||
-      mode === "popular_view"
+      mode === DanbooruSection.popular ||
+      mode === DanbooruSection.pool ||
+      mode === DanbooruSection.favorite_group ||
+      mode === DanbooruSection.popular_view
     ) {
       if (!noResults && numPosts !== limit) return true;
-    } else if (mode === "comments") {
+    } else if (mode === DanbooruSection.comments) {
       if (numPosts !== limit) return true;
     }
 
@@ -6957,10 +6987,10 @@ function main() {
     // Toggle endless pages on and off.
     if (
       endless_default === "disabled" ||
-      (gLoc !== "search" &&
-        gLoc !== "pool" &&
-        gLoc !== "favorites" &&
-        gLoc !== "favorite_group")
+      (SECTION !== DanbooruSection.search &&
+        SECTION !== DanbooruSection.pool &&
+        SECTION !== DanbooruSection.favorites &&
+        SECTION !== DanbooruSection.favorite_group)
     )
       return;
 
@@ -7030,10 +7060,10 @@ function main() {
     if (
       endless_default === "disabled" ||
       !paginator ||
-      (gLoc !== "search" &&
-        gLoc !== "pool" &&
-        gLoc !== "favorites" &&
-        gLoc !== "favorite_group")
+      (SECTION !== DanbooruSection.search &&
+        SECTION !== DanbooruSection.pool &&
+        SECTION !== DanbooruSection.favorites &&
+        SECTION !== DanbooruSection.favorite_group)
     )
       return;
 
@@ -7200,7 +7230,9 @@ function main() {
 
     // Check whether a user is looking at the "posts tab" and not the "wiki tab" in the main search listing.
     var postsDiv =
-      gLoc === "search" ? document.getElementById("posts") : undefined;
+      SECTION === DanbooruSection.search
+        ? document.getElementById("posts")
+        : undefined;
     var postsVisible = !postsDiv || postsDiv.style.display !== "none";
 
     if (bbb.flags.thumbs_xml || bbb.flags.paginator_xml || !postsVisible)
@@ -7348,8 +7380,8 @@ function main() {
     // Prep the first queued page object and add it to the document.
     var firstPageObject = bbb.endless.pages.shift();
     var page = firstPageObject.page;
-    var thumbContainer = getThumbContainer(gLoc);
-    var before = getThumbSibling(gLoc);
+    var thumbContainer = getThumbContainer(SECTION);
+    var before = getThumbSibling(SECTION);
 
     // Prepare thumbnails.
     prepThumbnails(page);
@@ -7520,12 +7552,12 @@ function main() {
     } else if (blacklist_add_bars) {
       var target, before; // If/else variables.
 
-      if (gLoc === "comment_search") {
+      if (SECTION === DanbooruSection.comment_search) {
         target = document.getElementById("a-index");
 
         if (target)
           before = target.getElementsByClassName("comments-for-post")[0];
-      } else if (gLoc === "comment") {
+      } else if (SECTION === DanbooruSection.comment) {
         target = document.getElementById("a-show");
 
         if (target)
@@ -8111,7 +8143,10 @@ function main() {
 
   function blacklistHidePost(post) {
     // Hide blacklisted post content and adjust related content.
-    if (blacklist_video_playback.indexOf("pause") > -1 && gLoc === "post") {
+    if (
+      blacklist_video_playback.indexOf("pause") > -1 &&
+      SECTION === DanbooruSection.post
+    ) {
       var postEl = getPostContent(post).el;
 
       if (postEl && postEl.tagName === "VIDEO") postEl.pause();
@@ -8123,7 +8158,10 @@ function main() {
 
   function blacklistShowPost(post) {
     // Reveal blacklisted post content and adjust related content.
-    if (blacklist_video_playback.indexOf("resume") > -1 && gLoc === "post") {
+    if (
+      blacklist_video_playback.indexOf("resume") > -1 &&
+      SECTION === DanbooruSection.post
+    ) {
       var postEl = getPostContent(post).el;
 
       if (
@@ -8163,21 +8201,24 @@ function main() {
     var allowAPI = useAPI();
     var stateCache = (history.state || {}).bbb_posts_cache;
 
-    if (gLoc === "post") delayMe(parsePost);
+    if (SECTION === DanbooruSection.post) delayMe(parsePost);
     // Delay is needed to force the script to pause and allow Danbooru to do whatever. It essentially mimics the async nature of the API call.
-    else if (gLoc === "comment_search" || gLoc === "comment")
+    else if (
+      SECTION === DanbooruSection.comment_search ||
+      SECTION === DanbooruSection.comment
+    )
       delayMe(fixCommentSearch);
     else if (stateCache)
       // Use a cached set of thumbnails.
       delayMe(function () {
         parseListing(formatInfoArray(stateCache.posts));
       });
-    else if (allowAPI && potentialHiddenPosts(gLoc))
+    else if (allowAPI && potentialHiddenPosts(SECTION))
       // API only features.
-      searchJSON(gLoc);
+      searchJSON(SECTION);
     else if (!allowAPI && allowUserLimit())
       // Alternate mode for features.
-      searchPages(gLoc);
+      searchPages(SECTION);
 
     // Cache any necessary info before leaving the page.
     window.addEventListener("beforeunload", saveStateCache);
@@ -8316,7 +8357,7 @@ function main() {
     var downloadName = (getMeta("og:title") || "").replace(" - Danbooru", "");
     var desc;
 
-    if (gLoc === "post" && downloadName) desc = downloadName;
+    if (SECTION === DanbooruSection.post && downloadName) desc = downloadName;
     else if (typeof postInfo.tag_string_artist === "string") {
       var artists = tagStringList(
         postInfo.tag_string_artist.replace(
@@ -8356,7 +8397,7 @@ function main() {
 
   function postFileUrlDesc(postInfo) {
     // Create/return the file URL desc property.
-    if (gLoc !== "post")
+    if (SECTION !== DanbooruSection.post)
       // Danbooru doesn't provide this information for thumbnail listings.
       return "";
     else if (typeof postInfo.file_url_desc === "string")
@@ -8715,8 +8756,8 @@ function main() {
 
     if (
       !paginator ||
-      gLoc === "pool" ||
-      gLoc === "favorite_group" ||
+      SECTION === DanbooruSection.pool ||
+      SECTION === DanbooruSection.favorite_group ||
       !allowUserLimit()
     )
       return;
@@ -9586,7 +9627,7 @@ function main() {
       else secondMenu.appendChild(item);
     }
 
-    if (gLoc === "search") {
+    if (SECTION === DanbooruSection.search) {
       var info = track_new_data;
       var mode = getVar("new_posts");
       var postsDiv = document.getElementById("posts");
@@ -9839,7 +9880,11 @@ function main() {
       ".ui-autocomplete {z-index: 9004 !important;}";
 
     // Provide a little extra space for listings that allow thumbnail_count.
-    if (thumbnail_count && (gLoc === "search" || gLoc === "favorites")) {
+    if (
+      thumbnail_count &&
+      (SECTION === DanbooruSection.search ||
+        SECTION === DanbooruSection.favorites)
+    ) {
       styles +=
         "div#page {margin: 0px 10px 0px 20px !important;}" +
         "section#content {padding: 0px !important;}";
@@ -10366,7 +10411,7 @@ function main() {
     if (hide_comment_notice) {
       var commentGuide, commentGuideParent; // If/else variables.
 
-      if (gLoc === "post") {
+      if (SECTION === DanbooruSection.post) {
         commentGuide = document.querySelector("#comments h2 a[href*='howto']");
         commentGuideParent = commentGuide ? commentGuide.parentNode : undefined;
 
@@ -10376,7 +10421,7 @@ function main() {
             "Before commenting, read the how to comment guide."
         )
           commentGuideParent.style.display = "none";
-      } else if (gLoc === "comments") {
+      } else if (SECTION === DanbooruSection.comments) {
         commentGuide = document.querySelector(
           "#a-index div h2 a[href*='howto']",
         );
@@ -10391,7 +10436,7 @@ function main() {
       }
     }
 
-    if (hide_tag_notice && gLoc === "post") {
+    if (hide_tag_notice && SECTION === DanbooruSection.post) {
       var tagGuide = document.querySelector("#edit div p a[href*='howto']");
       var tagGuideParent = tagGuide ? tagGuide.parentNode : undefined;
 
@@ -10403,10 +10448,10 @@ function main() {
         tagGuideParent.style.display = "none";
     }
 
-    if (hide_upload_notice && gLoc === "upload")
+    if (hide_upload_notice && SECTION === DanbooruSection.upload)
       styles += "#upload-guide-notice {display: none !important;}";
 
-    if (hide_pool_notice && gLoc === "new_pool") {
+    if (hide_pool_notice && SECTION === DanbooruSection.new_pool) {
       var poolGuide = document.querySelector("#c-new p a[href*='howto']");
       var poolGuideParent = poolGuide ? poolGuide.parentNode : undefined;
 
@@ -10515,12 +10560,12 @@ function main() {
 
     if (
       quick_search === "disabled" ||
-      (gLoc !== "search" &&
-        gLoc !== "favorites" &&
-        gLoc !== "pool" &&
-        gLoc !== "popular" &&
-        gLoc !== "popular_view" &&
-        gLoc !== "favorite_group")
+      (SECTION !== DanbooruSection.search &&
+        SECTION !== DanbooruSection.favorites &&
+        SECTION !== DanbooruSection.pool &&
+        SECTION !== DanbooruSection.popular &&
+        SECTION !== DanbooruSection.popular_view &&
+        SECTION !== DanbooruSection.favorite_group)
     )
       return;
 
@@ -10895,10 +10940,10 @@ function main() {
     // Set up the initial comment scores and get ready to handle new comments.
     if (
       !comment_score ||
-      (gLoc !== "comments" &&
-        gLoc !== "comment_search" &&
-        gLoc !== "comment" &&
-        gLoc !== "post")
+      (SECTION !== DanbooruSection.comments &&
+        SECTION !== DanbooruSection.comment_search &&
+        SECTION !== DanbooruSection.comment &&
+        SECTION !== DanbooruSection.post)
     )
       return;
 
@@ -10963,12 +11008,12 @@ function main() {
     // Make thumbnail clicks open in a new tab/window.
     if (
       post_link_new_window === "disabled" ||
-      (gLoc !== "search" &&
-        gLoc !== "pool" &&
-        gLoc !== "favorites" &&
-        gLoc !== "popular" &&
-        gLoc !== "popular_view" &&
-        gLoc !== "favorite_group")
+      (SECTION !== DanbooruSection.search &&
+        SECTION !== DanbooruSection.pool &&
+        SECTION !== DanbooruSection.favorites &&
+        SECTION !== DanbooruSection.popular &&
+        SECTION !== DanbooruSection.popular_view &&
+        SECTION !== DanbooruSection.favorite_group)
     )
       return;
 
@@ -11080,7 +11125,10 @@ function main() {
           // Input types: https://developer.mozilla.org/en-US/docs/Web/HTML/Element/input#Attributes
           return;
 
-        var loc = gLoc === "post" ? "post" : "other";
+        var loc =
+          SECTION === DanbooruSection.post
+            ? ("post" as const)
+            : ("other" as const);
         var hotkeyCode = createHotkeyCode(event);
         var hotkey = bbb.hotkeys[loc][hotkeyCode];
 
@@ -11124,7 +11172,8 @@ function main() {
 
   function createHotkey(hotkeyCode, func, propObject) {
     // Create hotkeys or override Danbooru's existing ones. Creating a hotkey for a hotkey that already exists will replace it.
-    var loc = gLoc === "post" ? "post" : "other";
+    var loc =
+      SECTION === DanbooruSection.post ? ("post" as const) : ("other" as const);
     var hotkeyObject = { func: func };
 
     if (propObject) {
@@ -11138,7 +11187,8 @@ function main() {
 
   function removeHotkey(hotkeyCode) {
     // Remove a hotkey.
-    var loc = gLoc === "post" ? "post" : "other";
+    var loc =
+      SECTION === DanbooruSection.post ? ("post" as const) : ("other" as const);
 
     delete bbb.hotkeys[loc][hotkeyCode];
   }
@@ -11226,10 +11276,10 @@ function main() {
     // Fix the search.
     if (
       searchParent &&
-      (gLoc === "search" ||
-        gLoc === "post" ||
-        gLoc === "intro" ||
-        gLoc === "favorites")
+      (SECTION === DanbooruSection.search ||
+        SECTION === DanbooruSection.post ||
+        SECTION === DanbooruSection.intro ||
+        SECTION === DanbooruSection.favorites)
     ) {
       var search = searchParent.getElementsByTagName("form")[0];
 
@@ -11372,7 +11422,7 @@ function main() {
       autohide_sidebar ||
       !sidebar ||
       !content ||
-      (gLoc === "post" && !comments)
+      (SECTION === DanbooruSection.post && !comments)
     )
       return;
 
@@ -11464,10 +11514,10 @@ function main() {
     // Set up the fixed paginator.
     if (
       fixed_paginator === "disabled" ||
-      (gLoc !== "search" &&
-        gLoc !== "pool" &&
-        gLoc !== "favorites" &&
-        gLoc !== "favorite_group")
+      (SECTION !== DanbooruSection.search &&
+        SECTION !== DanbooruSection.pool &&
+        SECTION !== DanbooruSection.favorites &&
+        SECTION !== DanbooruSection.favorite_group)
     )
       return;
 
@@ -11580,7 +11630,8 @@ function main() {
 
     if (!collapse_sidebar || !sidebar) return;
 
-    var dataLoc = gLoc === "post" ? "post" : "thumb";
+    var dataLoc =
+      SECTION === DanbooruSection.post ? ("post" as const) : ("thumb" as const);
     var data = collapse_sidebar_data[dataLoc];
     var headers = sidebar.querySelectorAll("h1, h2");
     var nameList = " ";
@@ -11639,7 +11690,8 @@ function main() {
     // Make a sidebar section expand/collapse by default.
     if (event.button !== 2) return;
 
-    var dataLoc = gLoc === "post" ? "post" : "thumb";
+    var dataLoc =
+      SECTION === DanbooruSection.post ? ("post" as const) : ("thumb" as const);
     var data = collapse_sidebar_data[dataLoc];
     var collapse = data[name];
 
@@ -11672,7 +11724,9 @@ function main() {
     var limit =
       (queryLimit !== undefined ? queryLimit : searchLimit) ||
       thumbnail_count_default;
-    var allowedLoc = gLoc === "search" || gLoc === "favorites";
+    var allowedLoc =
+      SECTION === DanbooruSection.search ||
+      SECTION === DanbooruSection.favorites;
 
     if (
       allowedLoc &&
@@ -11689,7 +11743,7 @@ function main() {
     // Check whether a page has zero results on it.
     var target = docEl || document.body;
     var numPosts = getPosts(target).length;
-    var thumbContainer = getThumbContainer(gLoc, target) || target;
+    var thumbContainer = getThumbContainer(SECTION, target) || target;
     var thumbContainerText = thumbContainer ? thumbContainer.textContent : "";
 
     if (
@@ -11748,11 +11802,14 @@ function main() {
     var limit = getLimit();
     var pageNum = getVar("page");
     var paginator = getPaginator();
-    var thumbContainer = getThumbContainer(gLoc);
+    var thumbContainer = getThumbContainer(SECTION);
     var imgContainer = getPostContent().container;
 
     if (!paginator && !thumbContainer && !imgContainer) return true;
-    else if (gLoc === "search" || gLoc === "favorites") {
+    else if (
+      SECTION === DanbooruSection.search ||
+      SECTION === DanbooruSection.favorites
+    ) {
       if (
         limit === 0 ||
         pageNum === "b1" ||
@@ -11760,13 +11817,13 @@ function main() {
         safebSearchTest()
       )
         return true;
-    } else if (gLoc === "comments") {
+    } else if (SECTION === DanbooruSection.comments) {
       if (pageNum === "b1" || noResultsPage()) return true;
     } else if (
-      gLoc === "pool" ||
-      gLoc === "favorite_group" ||
-      gLoc === "popular" ||
-      gLoc === "popular_view"
+      SECTION === DanbooruSection.pool ||
+      SECTION === DanbooruSection.favorite_group ||
+      SECTION === DanbooruSection.popular ||
+      SECTION === DanbooruSection.popular_view
     ) {
       if (noResultsPage()) return true;
     }
@@ -11842,7 +11899,10 @@ function main() {
 
   function accountUpdateWatch() {
     // Signal a Danbooru account setting check upon signing in or submitting settings. Check the settings upon the next page loading.
-    if (gLoc === "signin" || gLoc === "settings") {
+    if (
+      SECTION === DanbooruSection.signin ||
+      SECTION === DanbooruSection.settings
+    ) {
       var submit = document.querySelector("input[type=submit][name=commit]");
 
       submit.addEventListener(
@@ -11937,7 +11997,9 @@ function main() {
     // Choose the appropriate search link option to run.
     if (
       search_add === "disabled" ||
-      (gLoc !== "search" && gLoc !== "post" && gLoc !== "favorites")
+      (SECTION !== DanbooruSection.search &&
+        SECTION !== DanbooruSection.post &&
+        SECTION !== DanbooruSection.favorites)
     )
       return;
 
@@ -12098,10 +12160,10 @@ function main() {
 
     if (
       tagsInput &&
-      (gLoc === "search" ||
-        gLoc === "post" ||
-        gLoc === "intro" ||
-        gLoc === "favorites")
+      (SECTION === DanbooruSection.search ||
+        SECTION === DanbooruSection.post ||
+        SECTION === DanbooruSection.intro ||
+        SECTION === DanbooruSection.favorites)
     ) {
       searchAddToggleCheck();
       tagsInput.addEventListener("input", searchAddToggleCheck, false);
