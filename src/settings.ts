@@ -39,22 +39,22 @@ type SettingDef =
       default: any;
     };
 
-const SETTINGS_DEF = {
+export const SETTINGS_DEF = {
   add_popular_link: {
     type: "checkbox",
-    default: false,
+    default: false as boolean,
     name: "Add Popular Link",
     desc: 'Add a link to the popular listing to the "posts" submenu',
   },
   add_random_post_link: {
     type: "checkbox",
-    default: false,
+    default: false as boolean,
     name: "Add Random Link",
     desc: "Add a link to a random post to the post sidebar options menu.",
   },
   alternate_image_swap: {
     type: "checkbox",
-    default: false,
+    default: false as boolean,
     name: "Alternate Image Swap",
     desc: "Switch between the sample and original image by clicking the image. <tiphead>Note</tiphead>Notes can be toggled by using the link in the sidebar options section.",
   },
@@ -83,7 +83,7 @@ const SETTINGS_DEF = {
   },
   blacklist_add_bars: {
     type: "checkbox",
-    default: false,
+    default: false as boolean,
     name: "Additional Bars",
     desc: "Add a blacklist bar to the comment search listing and individually linked comments so that blacklist entries can be toggled as needed.",
   },
@@ -95,13 +95,13 @@ const SETTINGS_DEF = {
   },
   blacklist_ignore_fav: {
     type: "checkbox",
-    default: false,
+    default: false as boolean,
     name: "Ignore Favorites",
     desc: "Allow the blacklist to ignore your favorited posts.",
   },
   blacklist_thumb_controls: {
     type: "checkbox",
-    default: false,
+    default: false as boolean,
     name: "Thumbnail Controls",
     desc: 'Allow control over individual blacklisted thumbnails and access to blacklist toggle links from blacklisted thumbnails. <tiphead>Directions</tiphead>For blacklisted thumbnails that have been revealed, hovering over them will reveal a clickable "X" icon that can hide them again. <br><br>If using "hidden" or "replaced" for the "post display" option, clicking on the area of a blacklisted thumbnail will pop up a menu that displays what blacklist entries it matches. Clicking the thumbnail area a second time while that menu is open will reveal that single thumbnail. <br><br>The menu that pops up on the first click also allows for toggling any listed blacklist entry for the entire page and navigating to the post without revealing its thumbnail. <tiphead>Note</tiphead>Toggling blacklist entries will have no effect on posts that have been changed via their individual controls.',
   },
@@ -119,13 +119,13 @@ const SETTINGS_DEF = {
   },
   blacklist_smart_view: {
     type: "checkbox",
-    default: false,
+    default: false as boolean,
     name: "Smart View",
     desc: "When navigating to a blacklisted post by using its thumbnail, if the thumbnail has already been revealed, the post content will temporarily be exempt from any blacklist checks for 1 minute and be immediately visible. <tiphead>Note</tiphead>Thumbnails in the parent/child notices of posts with exempt content will still be affected by the blacklist.",
   },
   blacklist_session_toggle: {
     type: "checkbox",
-    default: false,
+    default: false as boolean,
     name: "Session Toggle",
     desc: "When toggling an individual blacklist entry on and off, the mode it's toggled to will persist across other pages in the same browsing session until it ends.<tiphead>Note</tiphead>For blacklists with many entries, this option can cause unexpected behavior (ex: getting logged out) if too many entries are toggled off at the same time.",
   },
@@ -163,67 +163,67 @@ const SETTINGS_DEF = {
   },
   bypass_api: {
     type: "checkbox",
-    default: false,
+    default: false as boolean,
     name: "Automatic API Bypass",
     desc: "When logged out and API only features are enabled, do not warn about needing to be logged in. Instead, automatically bypass those features.",
   },
   clean_links: {
     type: "checkbox",
-    default: false,
+    default: false as boolean,
     name: "Clean Links",
     desc: "Remove the extra information after the post ID in thumbnail listing post links.<tiphead>Note</tiphead>Enabling this option will disable Danbooru's search navigation and active pool/favorite group detection for posts.",
   },
   collapse_sidebar: {
     type: "checkbox",
-    default: false,
+    default: false as boolean,
     name: "Collapsible Sidebar",
     desc: "Allow sections in the sidebar to be expanded and collapsed via clicking their header titles.<tiphead>Note</tiphead>Sections can be set to default to expanded or collapsed by right clicking their titles.",
   },
   comment_score: {
     type: "checkbox",
-    default: false,
+    default: false as boolean,
     name: "Comment Scores",
     desc: "Make comment scores visible by adding them as direct links to their respective comments.",
   },
   custom_status_borders: {
     type: "checkbox",
-    default: false,
+    default: false as boolean,
     name: "Custom Status Borders",
     desc: "Override Danbooru's thumbnail borders for deleted, flagged, pending, parent, and child images.",
   },
   custom_tag_borders: {
     type: "checkbox",
-    default: true,
+    default: true as boolean,
     name: "Custom Tag Borders",
     desc: "Add thumbnail borders to posts with specific tags.",
   },
   direct_downloads: {
     type: "checkbox",
-    default: false,
+    default: false as boolean,
     name: "Direct Downloads",
     desc: "Allow download managers to download the posts displayed in the favorites, search, pool, popular, and favorite group listings. <tiphead>Note</tiphead>Posts filtered out by the blacklist or quick search will not provide direct downloads until the blacklist entry or quick search affecting them is disabled.",
   },
   disable_embedded_notes: {
     type: "checkbox",
-    default: false,
+    default: false as boolean,
     name: "Disable Embedded Notes",
     desc: "Force posts with embedded notes to display with the original note styling. <tiphead>Notes</tiphead>While notes will display with the original styling, the actual post settings will still have embedded notes set to enabled. <br><br>Due to the actual settings, users that may wish to edit notes will have to edit the notes with the embedded note styling so that nothing ends up breaking in unexpected ways. When toggling translation mode or opening the edit note dialog box, the notes will automatically revert back to the original embedded notes until the page is reloaded. <br><br>Note resizing and moving will be allowed without the reversion to embedded notes since this ability is sometimes necessary for badly positioned notes. Any note resizing or moving done as a part of intended note editing should be done <b>after</b> triggering the embedded note reversion since any changes before it will be lost.",
   },
   disable_tagged_filenames: {
     type: "checkbox",
-    default: false,
+    default: false as boolean,
     name: "Disable Tagged Filenames",
     desc: 'Remove the tag information from post filenames and only leave the original md5 hash. <tiphead>Note</tiphead>For logged in users with their account\'s "disable tagged filenames" setting set to "yes", this option must be enabled for consistent behavior on hidden posts. <br><br>For logged in users with their account\'s "disable tagged filenames" setting set to "no" and logged out users, this option can be enabled to remove the tags from filenames without having to use an account setting.',
   },
   enable_menu_autocomplete: {
     type: "checkbox",
-    default: true,
+    default: true as boolean,
     name: "Enable Menu Autocomplete",
     desc: "Allow the BBB menu to use Danbooru's tag autocomplete.",
   },
   enable_status_message: {
     type: "checkbox",
-    default: true,
+    default: true as boolean,
     name: "Enable Status Message",
     desc: "When requesting information from Danbooru, display the request status in the lower right corner.",
   },
@@ -236,7 +236,7 @@ const SETTINGS_DEF = {
   },
   endless_fill: {
     type: "checkbox",
-    default: false,
+    default: false as boolean,
     name: "Fill Pages",
     desc: "When appending pages with missing thumbnails caused by hidden posts or removed duplicate posts, retrieve thumbnails from the following pages and add them to the new page until the desired number of thumbnails is reached. <tiphead>Note</tiphead>If using page separators, the displayed page number for appended pages composed of thumbnails from multiple Danbooru pages will be replaced by a range consisting of the first and last pages from which thumbnails were retrieved.",
   },
@@ -250,13 +250,13 @@ const SETTINGS_DEF = {
   },
   endless_preload: {
     type: "checkbox",
-    default: false,
+    default: false as boolean,
     name: "Preload Next Page",
     desc: "Start loading the next page as soon as possible.<tiphead>Note</tiphead>A preloaded page will not be appended until the scroll limit is reached.",
   },
   endless_remove_dup: {
     type: "checkbox",
-    default: false,
+    default: false as boolean,
     name: "Remove Duplicates",
     desc: "When appending new pages, remove posts that already exist in the listing from the new page.<tiphead>Note</tiphead>Duplicate posts are caused by the addition of new posts to the beginning of a listing or changes to the order of the posts.",
   },
@@ -280,7 +280,7 @@ const SETTINGS_DEF = {
   },
   endless_session_toggle: {
     type: "checkbox",
-    default: false,
+    default: false as boolean,
     name: "Session Toggle",
     desc: "When toggling endless pages on and off, the mode it's toggled to will override the default and persist across other pages in the same browsing session for that tab until it ends.",
   },
@@ -317,61 +317,61 @@ const SETTINGS_DEF = {
   },
   hide_ban_notice: {
     type: "checkbox",
-    default: false,
+    default: false as boolean,
     name: "Hide Ban Notice",
     desc: "Hide the Danbooru ban notice.",
   },
   hide_comment_notice: {
     type: "checkbox",
-    default: false,
+    default: false as boolean,
     name: "Hide Comment Guide Notice",
     desc: "Hide the Danbooru comment guide notice.",
   },
   hide_fav_button: {
     type: "checkbox",
-    default: false,
+    default: false as boolean,
     name: "Hide Favorite Button",
     desc: "Hide the favorite button below post content.",
   },
   hide_pool_notice: {
     type: "checkbox",
-    default: false,
+    default: false as boolean,
     name: "Hide Pool Guide Notice",
     desc: "Hide the Danbooru pool guide notice.",
   },
   hide_sign_up_notice: {
     type: "checkbox",
-    default: false,
+    default: false as boolean,
     name: "Hide Sign Up Notice",
     desc: "Hide the Danbooru account sign up notice.",
   },
   hide_tag_notice: {
     type: "checkbox",
-    default: false,
+    default: false as boolean,
     name: "Hide Tag Guide Notice",
     desc: "Hide the Danbooru tag guide notice.",
   },
   hide_tos_notice: {
     type: "checkbox",
-    default: false,
+    default: false as boolean,
     name: "Hide TOS Notice",
     desc: "Hide the Danbooru terms of service agreement notice.",
   },
   hide_upgrade_notice: {
     type: "checkbox",
-    default: false,
+    default: false as boolean,
     name: "Hide Upgrade Notice",
     desc: "Hide the Danbooru upgrade account notice.",
   },
   hide_upload_notice: {
     type: "checkbox",
-    default: false,
+    default: false as boolean,
     name: "Hide Upload Guide Notice",
     desc: "Hide the Danbooru upload guide notice.",
   },
   hide_hidden_notice: {
     type: "checkbox",
-    default: false,
+    default: false as boolean,
     name: "Hide Hidden Posts Notice",
     desc: "Hide the Danbooru hidden posts notice.",
   },
@@ -384,19 +384,19 @@ const SETTINGS_DEF = {
   },
   load_sample_first: {
     type: "checkbox",
-    default: true,
+    default: true as boolean,
     name: "Load Sample First",
     desc: 'Load sample images first when viewing a post.<tiphead>Note</tiphead>When logged in, the account\'s "default image width" setting will override this option. This behavior can be changed with the "override sample setting" option under the preferences tab.',
   },
   manage_cookies: {
     type: "checkbox",
-    default: false,
+    default: false as boolean,
     name: "Manage Notice Cookies",
     desc: 'When using the "hide upgrade notice", "hide sign up notice", and/or "hide TOS notice" options, also create cookies to disable these notices at the server level.<tiphead>Tip</tiphead>Use this feature if the notices keep flashing on your screen before being removed.',
   },
   minimize_status_notices: {
     type: "checkbox",
-    default: false,
+    default: false as boolean,
     name: "Minimize Status Notices",
     desc: "Hide the Danbooru deleted, banned, flagged, appealed, and pending notices. When you want to see a hidden notice, you can click the appropriate status link in the information section of the sidebar.",
   },
@@ -409,25 +409,25 @@ const SETTINGS_DEF = {
   },
   override_resize: {
     type: "checkbox",
-    default: false,
+    default: false as boolean,
     name: "Override Resize Setting",
     desc: 'Allow the "resize post" setting to override the account "fit images to window" setting when logged in.',
   },
   override_sample: {
     type: "checkbox",
-    default: false,
+    default: false as boolean,
     name: "Override Sample Setting",
     desc: 'Allow the "load sample first" setting to override the account "default image width" setting when logged in. <tiphead>Note</tiphead>When using this option, your Danbooru account settings should have "default image width" set to the corresponding value of the "load sample first" script setting. Not doing so will cause your browser to always download both the sample and original image. If you often change the "load sample first" setting, leaving your account to always load the sample/850px image first is your best option.',
   },
   page_counter: {
     type: "checkbox",
-    default: false,
+    default: false as boolean,
     name: "Page Counter",
     desc: 'Add a page counter and "go to page #" input field near the top of listing pages. <tiphead>Note</tiphead>The total number of pages will not be displayed if the pages are using the "previous & next" paging system or the total number of pages exceeds the maximum amount allowed by your user account level.',
   },
   post_drag_scroll: {
     type: "checkbox",
-    default: false,
+    default: false as boolean,
     name: "Post Drag Scrolling",
     desc: "While holding down left click on a post's content, mouse movement can be used to scroll the whole page and reposition the content.<tiphead>Note</tiphead>This option is automatically disabled when translation mode is active.",
   },
@@ -445,7 +445,7 @@ const SETTINGS_DEF = {
   },
   post_resize: {
     type: "checkbox",
-    default: true,
+    default: true as boolean,
     name: "Resize Post",
     desc: 'Shrink large post content to fit the browser window when initially loading a post.<tiphead>Note</tiphead>When logged in, the account\'s "fit images to window" setting will override this option. This behavior can be changed with the "override resize setting" option under the preferences tab.',
   },
@@ -470,7 +470,7 @@ const SETTINGS_DEF = {
   },
   post_tag_titles: {
     type: "checkbox",
-    default: false,
+    default: false as boolean,
     name: "Post Tag Titles",
     desc: "Change the page titles for posts to a full list of the post tags.",
   },
@@ -489,7 +489,7 @@ const SETTINGS_DEF = {
   },
   remove_tag_headers: {
     type: "checkbox",
-    default: false,
+    default: false as boolean,
     name: "Remove Tag Headers",
     desc: 'Remove the "copyrights", "characters", and "artist" headers from the sidebar tag list.',
   },
@@ -526,19 +526,19 @@ const SETTINGS_DEF = {
   },
   show_banned: {
     type: "checkbox",
-    default: false,
+    default: false as boolean,
     name: "Show Banned Placeholders",
     desc: 'Display all banned posts in the search, pool, popular, favorites, comments, and favorite group listings by using "hidden" placeholders.<tiphead>Note</tiphead>This option only affects users below the gold account level.',
   },
   show_deleted: {
     type: "checkbox",
-    default: false,
+    default: false as boolean,
     name: "Show Deleted",
     desc: 'Display all deleted posts in the search, pool, popular, favorites, and favorite group listings. <tiphead>Note</tiphead>When using this option, your Danbooru account settings should have "deleted post filter" set to no and "show deleted children" set to yes in order to function properly and minimize connections to Danbooru.',
   },
   show_loli: {
     type: "checkbox",
-    default: false,
+    default: false as boolean,
     name: "Show Loli Placeholders",
     desc: 'Display loli posts in the search, pool, popular, favorites, comments, and favorite group listings by using "hidden" placeholders.<tiphead>Note</tiphead>This option only affects users below the gold account level.',
   },
@@ -556,19 +556,19 @@ const SETTINGS_DEF = {
   },
   show_shota: {
     type: "checkbox",
-    default: false,
+    default: false as boolean,
     name: "Show Shota Placeholders",
     desc: 'Display shota posts in the search, pool, popular, favorites, comments, and favorite group listings by using "hidden" placeholders.<tiphead>Note</tiphead>This option only affects users below the gold account level.',
   },
   show_toddlercon: {
     type: "checkbox",
-    default: false,
+    default: false as boolean,
     name: "Show Toddlercon Placeholders",
     desc: 'Display toddlercon posts in the search, pool, popular, favorites, comments, and favorite group listings by using "hidden" placeholders.<tiphead>Note</tiphead>This option only affects users below the gold account level.',
   },
   single_color_borders: {
     type: "checkbox",
-    default: false,
+    default: false as boolean,
     name: "Single Color Borders",
     desc: "Only use one color for each thumbnail border.",
   },
@@ -597,7 +597,7 @@ const SETTINGS_DEF = {
   },
   track_new: {
     type: "checkbox",
-    default: false,
+    default: false as boolean,
     name: "Track New Posts",
     desc: 'Add a menu option titled "new" to the posts section submenu (between "listing" and "upload") that links to a customized search focused on keeping track of new posts.<tiphead>Note</tiphead>While browsing the new posts, the current page of posts is also tracked. If the new post listing is left, clicking the "new" link later on will attempt to pull up the posts where browsing was left off at.<tiphead>Tip</tiphead>If you would like to bookmark the new post listing, drag and drop the link to your bookmarks or right click it and bookmark/copy the location from the context menu.',
   },
@@ -610,7 +610,7 @@ const SETTINGS_DEF = {
   },
   video_controls: {
     type: "checkbox",
-    default: true,
+    default: true as boolean,
     name: "Video Controls",
     desc: "Show the controls for video posts.",
   },
@@ -652,6 +652,7 @@ const SETTINGS_DEF = {
       "100%:1",
     ],
   },
+  // TODO: Add type of this
   collapse_sidebar_data: { default: { post: {}, thumb: {} } },
   script_blacklisted_tags: { default: "" },
   status_borders: {
@@ -726,11 +727,124 @@ const SETTINGS_DEF = {
       { name: "hidden", tags: "~loli ~shota ~toddlercon ~status:banned" },
     ] satisfies TagGroup[] as TagGroup[],
   },
+  // TODO: Add type of this
   track_new_data: { default: { viewed: 0, viewing: 1 } },
-  video_volume_data: { default: { level: 1, muted: false } },
+  // TODO: Add type of this
+  video_volume_data: { default: { level: 1, muted: false as boolean } },
 } satisfies Record<string, SettingDef>;
 
+export type SettingKey = keyof typeof SETTINGS_DEF;
+export type Settings = {
+  [key in keyof typeof SETTINGS_DEF]: (typeof SETTINGS_DEF)[key]["default"];
+};
+
 export namespace Settings {
+  function defaultSettings(): Settings {
+    const rv: Record<string, any> = {};
+
+    for (const [_k, { default: def }] of Object.entries(SETTINGS_DEF)) {
+      const key = _k as keyof typeof SETTINGS_DEF;
+      rv[key] = def;
+    }
+
+    return rv as Settings;
+  }
+
+  function matchSettings<T>(user: unknown, def: T): T {
+    switch (typeof def) {
+      // primitive types
+      case "string":
+      case "boolean":
+      case "number": {
+        if (typeof user !== typeof def) {
+          // type matches, all ok
+          return user as T;
+        } else {
+          // type is different, use default value
+          return def;
+        }
+      }
+      case "object": {
+        if (Array.isArray(def)) {
+          // array
+          if (!Array.isArray(user)) return def;
+
+          // try to use first default value for missing fields
+          if (def.length === 0) {
+            // default has no values for reference, no validation
+            return user as T;
+          } else {
+            const ref = def[0];
+
+            return user.map((x) => matchSettings(x, ref)) as T;
+          }
+        } else if (def === null) {
+          // idk lol, no validation
+          return user as T;
+        } else {
+          // is object
+          if (!(typeof user === "object" && user !== null)) {
+            // user value is NOT object, return default
+            return def;
+          }
+
+          // match keys in object
+          for (const _k in def) {
+            const key = _k as keyof typeof def;
+            if (!def.hasOwnProperty(key)) continue;
+
+            if (user.hasOwnProperty(key)) {
+              // user has this property
+              user[key] = matchSettings(
+                user[key as keyof typeof user],
+                def[key],
+              );
+            } else {
+              // user does NOT have this property
+              user[key] = def[key];
+            }
+          }
+
+          return user as T;
+        }
+      }
+      default: {
+        throw new Error(
+          `validation not implemented for setting type ${typeof def}`,
+        );
+      }
+    }
+  }
+
+  /** May modify the settings in-place, please discard the input value */
+  function validifySettings(x: unknown): Settings {
+    if (x !== null && typeof x === "object") {
+      for (const _k in SETTINGS_DEF) {
+        const key = _k as keyof typeof SETTINGS_DEF;
+        if (!SETTINGS_DEF.hasOwnProperty(key)) continue;
+
+        if (x.hasOwnProperty(key)) {
+          // input has setting key, check type is valid
+          x[key] = matchSettings(
+            x[key as keyof typeof x],
+            SETTINGS_DEF[key].default,
+          );
+        } else {
+          // input doesn't have setting key
+          x[key] = SETTINGS_DEF[key].default;
+        }
+      }
+
+      return x as Settings;
+    } else {
+      return defaultSettings();
+    }
+  }
+
+  export function get() {
+    return validifySettings(GM_getValue("bbb_settings", null));
+  }
+
   /** Erase user settings (just the `bbb_settings` user data) */
   export function erase() {
     GM_deleteValue("bbb_settings");
