@@ -795,13 +795,13 @@ export namespace Settings {
 
             if (user.hasOwnProperty(key)) {
               // user has this property
-              user[key] = matchSettings(
+              (user as any)[key] = matchSettings(
                 user[key as keyof typeof user],
                 def[key],
               );
             } else {
               // user does NOT have this property
-              user[key] = def[key];
+              (user as any)[key] = def[key];
             }
           }
 
@@ -818,27 +818,7 @@ export namespace Settings {
 
   /** May modify the settings in-place, please discard the input value */
   function validifySettings(x: unknown): Settings {
-    if (x !== null && typeof x === "object") {
-      for (const _k in SETTINGS_DEF) {
-        const key = _k as keyof typeof SETTINGS_DEF;
-        if (!SETTINGS_DEF.hasOwnProperty(key)) continue;
-
-        if (x.hasOwnProperty(key)) {
-          // input has setting key, check type is valid
-          x[key] = matchSettings(
-            x[key as keyof typeof x],
-            SETTINGS_DEF[key].default,
-          );
-        } else {
-          // input doesn't have setting key
-          x[key] = SETTINGS_DEF[key].default;
-        }
-      }
-
-      return x as Settings;
-    } else {
-      return defaultSettings();
-    }
+    return matchSettings(x, defaultSettings());
   }
 
   export function get() {
